@@ -11,6 +11,6 @@ source ./.venv/bin/activate
 pip install -r requirements/base.txt
 
 echo ------------ DJANGO make migrations
-python ./src/manage.py makemigrations --database=default
+python ./src/manage.py makemigrations
 python ./src/manage.py migrate --database=default
 echo "from django.contrib.auth.models import User; User.objects.create_superuser('$zUSER', '=$zEMAIL', 'pass')" | python ./src/manage.py shell
