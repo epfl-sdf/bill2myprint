@@ -1,8 +1,8 @@
 source ./.venv/bin/activate
 
-sudo aptitude install unixodbc unixodbc-dev freetds-dev tdsodbc
+sudo apt-get install unixodbc unixodbc-dev freetds-dev tdsodbc
 
-cat > /etc/odbc.ini << EOL
+sudo cat > /etc/odbc.ini << EOL
 [FreeTDS]
   Description=FreeTDS Driver
   Driver=/usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so
@@ -11,7 +11,7 @@ cat > /etc/odbc.ini << EOL
   CPReuse =
 EOL
 
-cat > /etc/odbcinst.ini << EOL
+sudo cat > /etc/odbcinst.ini << EOL
 [FreeTDS]
 Description=TDS driver (Sybase/MS SQL)
 Driver=libtdsodbc.so
