@@ -114,10 +114,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django_example',
-        'USER': 'django_example',
+        'ENGINE': 'sql_server.pyodbc',
+        'HOST': 'mssql-tst-uat.epfl.ch',
+        'NAME': 'DsPcDb_TEST',
+        'USER': 'build2myprint',
         'PASSWORD': get_secret('DB_PASSWORD'),
+        'PORT': 1433,
+        'OPTIONS': {
+            'driver': 'FreeTDS',
+            'host_is_server': True,
+            'extra_params': "TDS_VERSION=7.4"
+        }
     }
 }
 
