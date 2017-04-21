@@ -4,4 +4,4 @@
 
 source ./.venv/bin/activate
 
-python src/manage.py inspectdb
+python src/manage.py inspectdb --database=myprint
