@@ -6,7 +6,7 @@ echo ------------ credentials
 DB_ROOT_PASSWORD=`cat ../django-example.secrets.json | jq -r '.DB_ROOT_PASSWORD'`
 echo $DB_ROOT_PASSWORD
 OUR_DB_PASSWORD=`cat ../django-example.secrets.json | jq -r '.OUR_DB_PASSWORD'`
-echo $DB_PASSWORD
+echo $OUR_DB_PASSWORD
 
 echo ------------ apt-get install mysql
 sudo DEBIAN_FRONTEND=noninteractive apt-get -y install mysql-server
