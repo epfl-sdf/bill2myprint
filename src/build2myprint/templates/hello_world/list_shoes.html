@@ -1,0 +1,24 @@
+{% extends "hello_world/base.html" %}
+
+{% block title %}Liste de chaussures{% endblock %}
+
+{% block body %}
+<table border="1">
+  <tr>
+    <th>Marque</th>
+    <th>Taille</th>
+    <th>Couleur</th>
+    <th>Type</th>
+  </tr>
+  {% for shoe in shoes %}
+    <tr>
+      <td><a href="{% url 'build2myprint:edit_shoe' shoe.pk %}">{{ shoe.brand }}</a></td>
+      <td>{{ shoe.size }}</td>
+      <td>{{ shoe.color }}</td>
+      <td>{{ shoe.shoe_type }}</td>
+    </tr>
+  {% endfor %}
+</table> 
+<a href="{% url 'build2myprint:add_shoe' %}">Add Shoe</a><br>
+<a href="{% url 'logout' %}">Logout</a>
+{% endblock %}
