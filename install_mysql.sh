@@ -24,7 +24,7 @@ echo ------------ create table build2myprint
 source ./.venv/bin/activate
 zSQL=`echo "CREATE DATABASE build2myprint;\n"`
 zSQL=$zSQL`echo "CREATE USER "build2myprint"@"localhost";\n"`
-zSQL=$zSQL`echo "SET password FOR "build2myprint"@"localhost" = password('$DB_PASSWORD');\n"`
+zSQL=$zSQL`echo "SET password FOR "build2myprint"@"localhost" = password('$OUR_DB_PASSWORD');\n"`
 zSQL=$zSQL`echo "GRANT ALL ON build2myprint.* TO "build2myprint"@"localhost";\n"`
 echo -e $zSQL
 mysql --user="root" --password=$DB_ROOT_PASSWORD -e "$zSQL"
