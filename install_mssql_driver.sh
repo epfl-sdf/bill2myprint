@@ -1,6 +1,6 @@
 source ./.venv/bin/activate
 
-sudo apt-get install unixodbc unixodbc-dev freetds-dev tdsodbc
+sudo apt-get install -y unixodbc unixodbc-dev freetds-dev tdsodbc
 
 cat > /etc/odbc.ini << EOL
 [FreeTDS]
