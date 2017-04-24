@@ -134,6 +134,8 @@ DATABASES = {
     }
 }
 
+DATABASE_ROUTERS = ['config.dbrouter.MyPrintRouter']
+
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
