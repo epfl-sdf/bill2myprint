@@ -22,7 +22,7 @@ class StringUUIDField(models.Field):
 
 
 class AccesscontrollistsT(models.Model):
-    #id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
     classdata = models.BinaryField(db_column='ClassData', blank=True, null=True)  # Field name made lowercase.
     name = models.CharField(db_column='Name', max_length=50, blank=True, null=True)  # Field name made lowercase.
 
