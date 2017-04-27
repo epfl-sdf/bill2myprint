@@ -6,8 +6,8 @@ from .models import ServiceconsumerT, BudgettransactionsT, GroupmembershipT, Con
 
 class ServiceconsumerTAdmin(admin.ModelAdmin):
     readonly_fields = [f.name for f in ServiceconsumerT._meta.fields]
-    list_display = ('id', 'name', 'login', 'defaultgroupid', 'defaultcostcenter')
-    search_fields = ['id', 'name', 'login', 'defaultgroupid', 'defaultcostcenter', 'emailaddress']
+    list_display = ('id', 'name', 'login', 'addressone', 'defaultgroupid', 'defaultcostcenter')
+    search_fields = ['id', 'name', 'login', 'addressone', 'defaultgroupid', 'defaultcostcenter', 'emailaddress']
 
     def has_add_permission(self, request, obj=None):
         return False
