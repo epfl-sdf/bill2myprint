@@ -317,7 +317,7 @@ class GroupmembershipT(models.Model):
     class Meta:
         managed = False
         db_table = 'GroupMembership_T'
-        unique_together = ('userid', 'groupid')
+        unique_together = ('user', 'group')
 
 
 class MomsystemtasksT(models.Model):
