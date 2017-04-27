@@ -20,7 +20,7 @@ class BudgettransactionsTAdmin(admin.ModelAdmin):
     readonly_fields = [f.name for f in BudgettransactionsT._meta.fields]
     list_display = list([f.name for f in BudgettransactionsT._meta.fields])
     list_display_links = (None)
-    search_fields = ['entity__id', 'entity__name', 'entity__login', 'serviceusage']
+    search_fields = ['entity__id', 'entity__name', 'entity__login', 'serviceusage', 'transactiondata']
 
     def has_add_permission(self, request, obj=None):
         return False
