@@ -31,9 +31,9 @@ class BudgettransactionsTAdmin(admin.ModelAdmin):
 
 class GroupmembershipTAdmin(admin.ModelAdmin):
     readonly_fields = [f.name for f in GroupmembershipT._meta.fields]
-    list_display = ('userid', 'groupid')
+    list_display = ('user', 'group')
     list_display_links = (None)
-    search_fields = ['userid__name', 'userid__id', 'userid__login', 'groupid__value']
+    search_fields = ['user__name', 'user__id', 'user__login', 'group__value']
 
     def has_add_permission(self, request, obj=None):
         return False
