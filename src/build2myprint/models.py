@@ -214,7 +214,6 @@ class ConsumeridentitiesT(models.Model):
     defaultidentity = models.IntegerField(db_column='DefaultIdentity', blank=True, null=True)  # Field name made lowercase.
     visibility = models.IntegerField(db_column='Visibility', blank=True, null=True)  # Field name made lowercase.
     dispositionchecked = models.IntegerField(db_column='DispositionChecked', blank=True, null=True)  # Field name made lowercase.
-    entitylinked = models.ManyToManyField('ServiceconsumerT', through='GroupmembershipT', through_fields=('groupid', 'userid'))
 
     class Meta:
         managed = False
@@ -309,10 +308,10 @@ class EventsT(models.Model):
 class GroupmembershipT(models.Model):
     # userid = models.CharField(db_column='UserID', max_length=36)  # Field name made lowercase.
     # userid = StringUUIDField(db_column='UserID', primary_key=True)
-    userid = models.ForeignKey('ServiceconsumerT', db_column='UserID', primary_key=True)
+    user = models.ForeignKey('ServiceconsumerT', db_column='UserID', primary_key=True)
     # groupid = models.CharField(db_column='GroupID', max_length=36, blank=True, null=True)  # Field name made lowercase.
     # groupid = StringUUIDField(db_column='GroupID', blank=True, null=True)
-    groupid = models.ForeignKey(ConsumeridentitiesT, db_column='GroupID', to_field='consumerid')
+    group = models.ForeignKey('ServiceconsumerT', db_column='GroupID', blank=True, null=True)
 
     class Meta:
         managed = False
@@ -481,6 +480,7 @@ class ServiceconsumerT(models.Model):
     forcedrilldown = models.IntegerField(db_column='ForceDrillDown', blank=True, null=True)  # Field name made lowercase.
     emailaddress = models.CharField(db_column='EmailAddress', max_length=50, blank=True, null=True)  # Field name made lowercase.
     objectcontainerversion = models.IntegerField(db_column='OBJECTCONTAINERVERSION', blank=True, null=True)  # Field name made lowercase.
+    entitylinked = models.ManyToManyField('ServiceconsumerT', through='GroupmembershipT', through_fields=('user', 'group'))
 
     class Meta:
         managed = False
