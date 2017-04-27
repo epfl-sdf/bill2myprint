@@ -480,7 +480,7 @@ class ServiceconsumerT(models.Model):
     forcedrilldown = models.IntegerField(db_column='ForceDrillDown', blank=True, null=True)  # Field name made lowercase.
     emailaddress = models.CharField(db_column='EmailAddress', max_length=50, blank=True, null=True)  # Field name made lowercase.
     objectcontainerversion = models.IntegerField(db_column='OBJECTCONTAINERVERSION', blank=True, null=True)  # Field name made lowercase.
-    entitylinked = models.ManyToManyField('ServiceconsumerT', through='GroupmembershipT', through_fields=('user', 'group'))
+    entitylinked = models.ManyToManyField('ServiceconsumerT', through='GroupmembershipT', through_fields=('group', 'user'))
 
     class Meta:
         managed = False
