@@ -33,7 +33,7 @@ class GroupmembershipTAdmin(admin.ModelAdmin):
     readonly_fields = [f.name for f in GroupmembershipT._meta.fields]
     list_display = ('user', 'group')
     list_display_links = (None)
-    search_fields = ['user__name', 'user__id', 'user__login', 'group__value']
+    search_fields = ['user__name', 'user__id', 'user__login', 'group__name', 'group__id', 'group__login']
 
     def has_add_permission(self, request, obj=None):
         return False
