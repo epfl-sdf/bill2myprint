@@ -214,6 +214,7 @@ class ConsumeridentitiesT(models.Model):
     defaultidentity = models.IntegerField(db_column='DefaultIdentity', blank=True, null=True)  # Field name made lowercase.
     visibility = models.IntegerField(db_column='Visibility', blank=True, null=True)  # Field name made lowercase.
     dispositionchecked = models.IntegerField(db_column='DispositionChecked', blank=True, null=True)  # Field name made lowercase.
+    entitylinked = models.ManyToManyField('ServiceconsumerT', through='GroupmembershipT', through_fields=('groupid', 'userid'))
 
     class Meta:
         managed = False
