@@ -1,6 +1,24 @@
 from __future__ import unicode_literals
 
+import uuid
+
 from django.db import models
+
+
+class StringUUIDField(models.Field):
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return value
+        return str(uuid.UUID(bytes_le=value)).upper()
+
+    def to_python(self, value):
+        if isinstance(value, str):
+            return value
+
+        if value is None:
+            return value
+
+        return str(uuid.UUID(bytes_le=value)).upper()
 
 
 class AccesscontrollistsT(models.Model):
@@ -117,17 +135,21 @@ class BasystemlogT(models.Model):
 
 
 class BudgettransactionsT(models.Model):
-    transactiontime = models.DateTimeField(db_column='TransactionTime')  # Field name made lowercase.
+    transactiontime = models.DateTimeField(db_column='TransactionTime', primary_key=True)  # Field name made lowercase.
     transactiontype = models.IntegerField(db_column='TransactionType')  # Field name made lowercase.
     amount = models.FloatField(db_column='Amount', blank=True, null=True)  # Field name made lowercase.
-    entity = models.CharField(db_column='Entity', max_length=36)  # Field name made lowercase.
-    service = models.CharField(db_column='Service', max_length=36, blank=True, null=True)  # Field name made lowercase.
-    serviceusage = models.CharField(db_column='ServiceUsage', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    # entity = models.CharField(db_column='Entity', max_length=36)  # Field name made lowercase.
+    entity = models.ForeignKey('ServiceconsumerT', db_column='Entity')
+    # service = models.CharField(db_column='Service', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    service = models.ForeignKey('ServiceT', db_column='Service', primary_key=True)
+    # serviceusage = models.CharField(db_column='ServiceUsage', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    serviceusage = StringUUIDField(db_column='ServiceUsage', blank=True, null=True)
     transactiondata = models.CharField(db_column='TransactionData', max_length=100, blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
         db_table = 'BudgetTransactions_T'
+        unique_together = ('entity', 'transactiontime', 'service')
 
 
 class Camipro(models.Model):
@@ -181,19 +203,25 @@ class ConsumergrouplinksT(models.Model):
 
 
 class ConsumeridentitiesT(models.Model):
-    id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    # id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    id = StringUUIDField(db_column='ID', primary_key=True)
     classdata = models.BinaryField(db_column='ClassData')  # Field name made lowercase.
-    consumerid = models.CharField(db_column='ConsumerID', max_length=36)  # Field name made lowercase.
+    # consumerid = models.CharField(db_column='ConsumerID', max_length=36)  # Field name made lowercase.
+    consumerid = StringUUIDField(db_column='ConsumerID', primary_key=True)
     identitycategory = models.IntegerField(db_column='IdentityCategory')  # Field name made lowercase.
     identitytype = models.CharField(db_column='IdentityType', max_length=50, blank=True, null=True)  # Field name made lowercase.
     value = models.CharField(db_column='Value', max_length=255, blank=True, null=True)  # Field name made lowercase.
     defaultidentity = models.IntegerField(db_column='DefaultIdentity', blank=True, null=True)  # Field name made lowercase.
     visibility = models.IntegerField(db_column='Visibility', blank=True, null=True)  # Field name made lowercase.
     dispositionchecked = models.IntegerField(db_column='DispositionChecked', blank=True, null=True)  # Field name made lowercase.
+    entitylinked = models.ManyToManyField('ServiceconsumerT', through='GroupmembershipT', through_fields=('groupid', 'userid'))
 
     class Meta:
         managed = False
         db_table = 'ConsumerIdentities_T'
+
+    def __str__(self):
+        return self.value
 
 
 class Copernic(models.Model):
@@ -279,12 +307,17 @@ class EventsT(models.Model):
 
 
 class GroupmembershipT(models.Model):
-    userid = models.CharField(db_column='UserID', max_length=36)  # Field name made lowercase.
-    groupid = models.CharField(db_column='GroupID', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    # userid = models.CharField(db_column='UserID', max_length=36)  # Field name made lowercase.
+    # userid = StringUUIDField(db_column='UserID', primary_key=True)
+    userid = models.ForeignKey('ServiceconsumerT', db_column='UserID', primary_key=True)
+    # groupid = models.CharField(db_column='GroupID', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    # groupid = StringUUIDField(db_column='GroupID', blank=True, null=True)
+    groupid = models.ForeignKey(ConsumeridentitiesT, db_column='GroupID', to_field='consumerid')
 
     class Meta:
         managed = False
         db_table = 'GroupMembership_T'
+        unique_together = ('userid', 'groupid')
 
 
 class MomsystemtasksT(models.Model):
@@ -411,11 +444,13 @@ class Reportdata(models.Model):
 
 
 class ServiceconsumerT(models.Model):
-    id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    #id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    id = StringUUIDField(db_column='ID', primary_key=True)
     classdata = models.BinaryField(db_column='ClassData', blank=True, null=True)  # Field name made lowercase.
     name = models.CharField(db_column='Name', max_length=50, blank=True, null=True)  # Field name made lowercase.
     login = models.CharField(db_column='Login', max_length=50, blank=True, null=True)  # Field name made lowercase.
-    defaultgroupid = models.CharField(db_column='DefaultGroupID', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    # defaultgroupid = models.CharField(db_column='DefaultGroupID', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    defaultgroupid = StringUUIDField(db_column='DefaultGroupID', blank=True, null=True)  # Field name made lowercase.
     usertypeex = models.IntegerField(db_column='UserTypeEx', blank=True, null=True)  # Field name made lowercase.
     payconid = models.CharField(db_column='PayConID', max_length=50, blank=True, null=True)  # Field name made lowercase.
     usertype = models.CharField(db_column='UserType', max_length=20, blank=True, null=True)  # Field name made lowercase.
@@ -426,7 +461,8 @@ class ServiceconsumerT(models.Model):
     phone = models.CharField(db_column='Phone', max_length=50, blank=True, null=True)  # Field name made lowercase.
     fax = models.CharField(db_column='Fax', max_length=50, blank=True, null=True)  # Field name made lowercase.
     memo = models.CharField(db_column='Memo', max_length=250, blank=True, null=True)  # Field name made lowercase.
-    defaultcostcenter = models.CharField(db_column='DefaultCostCenter', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    # defaultcostcenter = models.CharField(db_column='DefaultCostCenter', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    defaultcostcenter = StringUUIDField(db_column='DefaultCostCenter', blank=True, null=True)
     hasbiodata = models.IntegerField(db_column='HasBioData', blank=True, null=True)  # Field name made lowercase.
     visibility = models.IntegerField(db_column='Visibility', blank=True, null=True)  # Field name made lowercase.
     emergencyaccountflag = models.NullBooleanField(db_column='EmergencyAccountFlag')  # Field name made lowercase.
@@ -434,12 +470,14 @@ class ServiceconsumerT(models.Model):
     sapname = models.CharField(db_column='SAPName', max_length=50, blank=True, null=True)  # Field name made lowercase.
     pincodehash = models.CharField(db_column='PinCodeHash', max_length=80, blank=True, null=True)  # Field name made lowercase.
     momsyncflag = models.NullBooleanField(db_column='MomSyncFlag')  # Field name made lowercase.
-    linkedconsumerid = models.CharField(db_column='LinkedConsumerID', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    # linkedconsumerid = models.CharField(db_column='LinkedConsumerID', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    linkedconsumerid = StringUUIDField(db_column='LinkedConsumerID', blank=True, null=True)
     modified = models.DateTimeField(db_column='Modified', blank=True, null=True)  # Field name made lowercase.
     customprop_igstatus = models.CharField(db_column='CustomProp_IGStatus', max_length=5, blank=True, null=True)  # Field name made lowercase.
     customprop_iglogin = models.CharField(db_column='CustomProp_IGLOGIN', max_length=50, blank=True, null=True)  # Field name made lowercase.
     state = models.CharField(db_column='State', max_length=10, blank=True, null=True)  # Field name made lowercase.
-    hierarchyposition = models.CharField(db_column='HierarchyPosition', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    # hierarchyposition = models.CharField(db_column='HierarchyPosition', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    hierarchyposition = StringUUIDField(db_column='HierarchyPosition', blank=True, null=True)
     forcedrilldown = models.IntegerField(db_column='ForceDrillDown', blank=True, null=True)  # Field name made lowercase.
     emailaddress = models.CharField(db_column='EmailAddress', max_length=50, blank=True, null=True)  # Field name made lowercase.
     objectcontainerversion = models.IntegerField(db_column='OBJECTCONTAINERVERSION', blank=True, null=True)  # Field name made lowercase.
@@ -447,6 +485,9 @@ class ServiceconsumerT(models.Model):
     class Meta:
         managed = False
         db_table = 'ServiceConsumer_T'
+
+    def __str__(self):
+        return '{} : {}/{}'.format(self.id, self.name, self.login)
 
 
 class ServiceproviderT(models.Model):
@@ -495,12 +536,16 @@ class ServiceusagecontainerinfoT(models.Model):
 
 
 class ServiceusageT(models.Model):
-    id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    #id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    id = StringUUIDField(db_column='ID', primary_key=True)
     serviceprovider = models.CharField(db_column='ServiceProvider', max_length=36)  # Field name made lowercase.
     service = models.CharField(db_column='Service', max_length=36, blank=True, null=True)  # Field name made lowercase.
-    serviceconsumer = models.CharField(db_column='ServiceConsumer', max_length=36, blank=True, null=True)  # Field name made lowercase.
-    servconsgroup = models.CharField(db_column='ServConsGroup', max_length=36, blank=True, null=True)  # Field name made lowercase.
-    servconsproject = models.CharField(db_column='ServConsProject', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    #serviceconsumer = models.CharField(db_column='ServiceConsumer', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    serviceconsumer = models.ForeignKey(ServiceconsumerT, db_column='ServiceConsumer')
+    #servconsgroup = models.CharField(db_column='ServConsGroup', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    servconsgroup = models.ForeignKey(ServiceconsumerT, db_column='ServConsGroup', related_name='serviceusage_servconsgroup_set')
+    #servconsproject = models.CharField(db_column='ServConsProject', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    servconsproject = models.ForeignKey(ServiceconsumerT, db_column='ServConsProject', related_name='serviceusage_servconsproject_set')
     cardnumber = models.IntegerField(db_column='CardNumber', blank=True, null=True)  # Field name made lowercase.
     classdata = models.BinaryField(db_column='ClassData', blank=True, null=True)  # Field name made lowercase.
     usagebegin = models.DateTimeField(db_column='UsageBegin', blank=True, null=True)  # Field name made lowercase.
@@ -532,7 +577,8 @@ class ServiceusageT(models.Model):
 
 
 class ServiceT(models.Model):
-    id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    #id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
+    id = StringUUIDField(db_column='ID', primary_key=True)
     classdata = models.BinaryField(db_column='ClassData', blank=True, null=True)  # Field name made lowercase.
     name = models.CharField(db_column='Name', max_length=50, blank=True, null=True)  # Field name made lowercase.
     serviceprovider = models.CharField(db_column='ServiceProvider', max_length=36)  # Field name made lowercase.
