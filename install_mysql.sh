@@ -1,11 +1,11 @@
 #!/bin/bash
 #Installation de l'application
-#zf170421.1035
+#zf170502.1711
 
 echo ------------ credentials
-DB_ROOT_PASSWORD=`cat ../django-example.secrets.json | jq -r '.DB_ROOT_PASSWORD'`
+DB_ROOT_PASSWORD=`cat ../bill2myprint.secrets.json | jq -r '.DB_ROOT_PASSWORD'`
 echo $DB_ROOT_PASSWORD
-OUR_DB_PASSWORD=`cat ../django-example.secrets.json | jq -r '.OUR_DB_PASSWORD'`
+OUR_DB_PASSWORD=`cat ../bill2myprint.secrets.json | jq -r '.OUR_DB_PASSWORD'`
 echo $OUR_DB_PASSWORD
 
 echo ------------ apt-get install mysql

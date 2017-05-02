@@ -27,7 +27,7 @@ def path_from_root(*x):
 BASE_DIR = path_from_root('')
 
 
-with open(path_from_root("../../django-example.secrets.json"), 'r') as f:
+with open(path_from_root("../../bill2myprint.secrets.json"), 'r') as f:
     secrets = json.loads(f.read())
 
 
