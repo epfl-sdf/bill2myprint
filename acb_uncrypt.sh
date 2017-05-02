@@ -1,8 +1,8 @@
 #!/bin/bash
 #Décryptage des credentials
-#zf170420.1446
+#zf170502.1654
 
-ZSECRET="django-example.secrets.json"
+ZSECRET="bill2myprint.secrets.json"
 
 gpg2 $ZSECRET.gpg
 mv $ZSECRET ../.
