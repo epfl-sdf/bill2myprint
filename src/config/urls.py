@@ -20,7 +20,6 @@ from django.shortcuts import render
 from django_tequila.urls import urlpatterns as django_tequila_urlpatterns
 
 from django_tequila.admin import TequilaAdminSite
-admin.autodiscover()
 admin.site.__class__ = TequilaAdminSite
 
 urlpatterns = [

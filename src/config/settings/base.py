@@ -122,14 +122,12 @@ DATABASES = {
     'myprint': {
         'ENGINE': 'sql_server.pyodbc',
         'HOST': 'mssql-tst-uat.epfl.ch',
-        'NAME': 'DsPcDb_TEST',
-        'USER': 'build2myprint',
-        'PASSWORD': get_secret('MYPRINT_DB_PASSWORD'),
+        'NAME': 'Staff',
         'PORT': 1433,
         'OPTIONS': {
             'driver': 'FreeTDS',
             'host_is_server': True,
-            'extra_params': "TDS_VERSION=7.4"
+            'extra_params': "TDS_VERSION=8.0"
         }
     }
 }
