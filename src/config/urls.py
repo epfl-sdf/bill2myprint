@@ -23,7 +23,7 @@ from django_tequila.admin import TequilaAdminSite
 admin.site.__class__ = TequilaAdminSite
 
 urlpatterns = [
-    url(r'^', include('build2myprint.urls')),
+    url(r'^', include('bill2myprint.urls')),
     url(r'^not_allowed/', lambda request: render(request, '403.html')),
     url(r'^admin/', admin.site.urls),
 ]
