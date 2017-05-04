@@ -77,7 +77,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = ('django_tequila.django_backend.TequilaBackend',)
-TEQUILA_SERVICE_NAME = "Build2myprint and Tequila"
+TEQUILA_SERVICE_NAME = "Bill2myprint and Tequila"
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/logged"
 LOGIN_REDIRECT_IF_NOT_ALLOWED = "/not_allowed"
