@@ -19,6 +19,13 @@ class SectionsView(LoginRequiredMixin, ListView):
     context_object_name = 'section_list'
 
     def get_queryset(self):
-	# The "S_StudU" part is prevented from beign displayed with to the defined "cut" templatetag
+	# The "S_StudU" part is prevented from being displayed with to the "cut" templatetag
         return ServiceconsumerT.objects.filter(name__endswith='S_StudU')
-    
+
+class RallongeFacultaireView(LoginRequiredMixin, ListView):
+    template_name = 'bill2myprint/rallonge_facultaire.html'
+    context_object_name = 'rallonge_list'
+
+    def get_queryset(self):
+        # Get the rallonge facultaire in the BudgetTransaction table
+        return BudgettransactionT.objects.filter(transactiondata__startswith='Rallonge')
