@@ -7,7 +7,7 @@ from django.views.generic import ListView
 #from django.http import HttpResponseRedirect, HttpResponseNotFound
 #from django.urls import reverse
 
-from .models import ServiceconsumerT
+from .models import ServiceconsumerT, BudgettransactionsT
 
 def index(request):
     context = {'text': 'Hello world !'}
@@ -29,4 +29,4 @@ class RallongeFacultaireView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Get the rallonge facultaire in the BudgetTransaction table
-        return BudgettransactionT.objects.filter(transactiondata__startswith='Rallonge')
+        return BudgettransactionsT.objects.filter(transactiondata__startswith='Rallonge')
