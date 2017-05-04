@@ -30,3 +30,11 @@ class RallongeFacultaireView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         # Get the rallonge facultaire in the BudgetTransaction table
         return BudgettransactionsT.objects.filter(transactiondata__startswith='Rallonge')
+
+class RallongeFacultaire2View(LoginRequiredMixin, ListView):
+    template_name = 'bill2myprint/rallonge_facultaire.html'
+    context_object_name = 'rallonge2_list'
+
+    def get_queryset(self):
+        # Get the rallonge facultaire in the BudgetTransaction table
+        return BudgettransactionsT.objects.filter(transactiondata__startswith='Rallonge').values('amount', 'transactiondata').distinct()
