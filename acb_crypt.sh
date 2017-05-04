@@ -2,7 +2,7 @@
 #Cryptage des credentials
 #zf170420.1446
 
-ZSECRET="django-example.secrets.json"
+ZSECRET="bill2myprint.secrets.json"
 
 gpg2 -c ../$ZSECRET
 mv ../$ZSECRET.gpg .

@@ -27,7 +27,7 @@ def path_from_root(*x):
 BASE_DIR = path_from_root('')
 
 
-with open(path_from_root("../../django-example.secrets.json"), 'r') as f:
+with open(path_from_root("../../bill2myprint.secrets.json"), 'r') as f:
     secrets = json.loads(f.read())
 
 
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'build2myprint',
+    'bill2myprint',
     'userprofile',
     'django_tequila',
 ]
@@ -77,7 +77,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = ('django_tequila.django_backend.TequilaBackend',)
-TEQUILA_SERVICE_NAME = "Hello world and Tequila"
+TEQUILA_SERVICE_NAME = "Build2myprint and Tequila"
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/logged"
 LOGIN_REDIRECT_IF_NOT_ALLOWED = "/not_allowed"
@@ -115,8 +115,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'build2myprint',
-        'USER': 'build2myprint',
+        'NAME': 'bill2myprint',
+        'USER': 'bill2myprint',
         'PASSWORD': get_secret('OUR_DB_PASSWORD'),
     },
     'myprint': {
