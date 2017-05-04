@@ -1,6 +1,6 @@
 #!/bin/bash
 #Installation de l'application
-#zf170421.1035
+#zf170502.1711
 
 echo ------------ credentials
 DB_ROOT_PASSWORD=`cat ../bill2myprint.secrets.json | jq -r '.DB_ROOT_PASSWORD'`
