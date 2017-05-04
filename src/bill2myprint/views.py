@@ -25,7 +25,7 @@ class SectionsView(LoginRequiredMixin, ListView):
 class RallongeFacultaireView(LoginRequiredMixin, ListView):
     template_name = 'bill2myprint/rallonge_facultaire.html'
     context_object_name = 'rallonge_list'
-    paginate_by = 50
+    paginate_by = 20
 
     def get_queryset(self):
         # Get the rallonge facultaire in the BudgetTransaction table
