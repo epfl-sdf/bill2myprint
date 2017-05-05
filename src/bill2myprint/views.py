@@ -73,6 +73,6 @@ def studentTotal(request, studid):
     # Output total of student depense
     template_name = 'bill2myprint/etudiant_total.html'
     student = ServiceconsumerT.objects.get(pk=studid)
-    total = student.budgettransactionst_set.aggregate(Sum('amount'))
+    total = student.budgettransactionst_set.aggregate(Sum('amount'))['amount__sum']
     name = student.name
     return render(request, template_name, {'total': total, 'name': name})
