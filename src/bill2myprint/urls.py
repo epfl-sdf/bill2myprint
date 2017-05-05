@@ -8,6 +8,7 @@ urlpatterns = [
     url(r'^rallonge/$', views.RallongeFacultaireView.as_view(), name='rallonge'),
     url(r'^rallonge2/$', views.RallongeFacultaire2View.as_view(), name='rallonge2'),
     url(r'^etudiants/$', views.StudentsView.as_view(), name='etudiants'),
+    url(r'^etudiants/(?P<studid>[A-Z0-9-]+)$', views.StudentDetailView.as_view(), name='etudiant_detail'),
     #url(r'^logged$', views.logged, name='logged'),
     url(r'^sections/$', views.SectionsView.as_view(), name='sections'),
 
