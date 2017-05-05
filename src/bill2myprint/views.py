@@ -64,4 +64,4 @@ class StudentDetailView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         # Get the student's transaction history
         student_id = self.kwargs['studid']
-        return ServiceconsumerT.objects.get(pk=studid).budgettransactionst_set.all()
+        return ServiceconsumerT.objects.get(pk=student_id).budgettransactionst_set.all()
