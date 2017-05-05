@@ -1,0 +1,24 @@
+{% extends "bill2myprint/base.html" %}
+{% load static %}
+{% load templatetags %}
+
+{% block template_main %}
+        <div class="page-header">
+	  <!-- Show the student's name -->
+          <h1>{{ name }}s</h1>
+        </div>
+
+        <div class="row">
+          <div>
+            <table class="table table-striped table-bordered table-hover">
+              <tbody>
+                <tr>
+                  <td>Total des transactions</td>
+                  <td>{{ total }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+{% endblock %}
