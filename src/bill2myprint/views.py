@@ -38,3 +38,14 @@ class RallongeFacultaire2View(LoginRequiredMixin, ListView):
     def get_queryset(self):
         # Get the rallonge facultaire in the BudgetTransaction table
         return BudgettransactionsT.objects.filter(transactiondata__startswith='Rallonge').values('amount', 'transactiondata').distinct()
+
+class StudentsView(LoginRequiredMixin, ListView):
+    template_name = 'bill2myprint/etudiants.html'
+    context_object_name = 'students_list'
+    paginate_by = 15
+
+    def get_queryset(self):
+        # Get the students list
+        students_group_id = ServiceconsumerT.objects.get(name='Etudiant').id
+        students_cost_center_id = ServiceconsumerT.objects.get(name='ETU').id
+        return ServiceconsumerT.objects.filter(defaultgroupid=students_group_id, defaultcostcenter=students_cost_center_id)
