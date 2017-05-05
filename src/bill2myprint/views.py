@@ -8,6 +8,7 @@ from django.views.generic import ListView
 #from django.urls import reverse
 
 from .models import ServiceconsumerT, BudgettransactionsT
+from django.db.models import Sum
 
 
 def index(request):
@@ -65,3 +66,13 @@ class StudentDetailView(LoginRequiredMixin, ListView):
         # Get the student's transaction history
         student_id = self.kwargs['studid']
         return ServiceconsumerT.objects.get(pk=student_id).budgettransactionst_set.all()
+
+
+@login_required
+def studentTotal(request, student_id):
+    # Output total of student depense
+    template_name = 'bill2myprint/etudiant_total.html'
+    student = ServiceconsumerT.objects.get(pk=student_id)
+    total = student.budgettransactionst_set.aggregate(Sum('amount'))
+    name = student.name
+    return render(request, template_name, {'total': total, 'name': name})
