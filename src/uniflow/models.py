@@ -153,8 +153,8 @@ class BudgettransactionsT(models.Model):
 
 
 class Camipro(models.Model):
-    sciper = models.CharField(db_column='Sciper', max_length=6, blank=True, null=True)  # Field name made lowercase.
-    cardid = models.CharField(db_column='CardId', max_length=16, blank=True, null=True)  # Field name made lowercase.
+    sciper = models.CharField(db_column='Sciper', max_length=6, primary_key=True)  # Field name made lowercase.
+    cardid = models.CharField(db_column='CardId', max_length=16, unique=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -451,7 +451,7 @@ class ServiceconsumerT(models.Model):
     # defaultgroupid = models.CharField(db_column='DefaultGroupID', max_length=36, blank=True, null=True)  # Field name made lowercase.
     defaultgroupid = StringUUIDField(db_column='DefaultGroupID', blank=True, null=True)  # Field name made lowercase.
     usertypeex = models.IntegerField(db_column='UserTypeEx', blank=True, null=True)  # Field name made lowercase.
-    payconid = models.CharField(db_column='PayConID', max_length=50, blank=True, null=True)  # Field name made lowercase.
+    payconid = models.ForeignKey('Camipro', to_field='cardid', db_column='PayConID')
     usertype = models.CharField(db_column='UserType', max_length=20, blank=True, null=True)  # Field name made lowercase.
     addressone = models.CharField(db_column='AddressOne', max_length=50, blank=True, null=True)  # Field name made lowercase.
     addresstwo = models.CharField(db_column='AddressTwo', max_length=100, blank=True, null=True)  # Field name made lowercase.
@@ -539,7 +539,7 @@ class ServiceusageT(models.Model):
     #id = models.CharField(db_column='ID', max_length=36, primary_key=True)  # Field name made lowercase.
     id = StringUUIDField(db_column='ID', primary_key=True)
     serviceprovider = models.CharField(db_column='ServiceProvider', max_length=36)  # Field name made lowercase.
-    service = models.CharField(db_column='Service', max_length=36, blank=True, null=True)  # Field name made lowercase.
+    service = models.ForeignKey('ServiceT', db_column='Service')  # Field name made lowercase.
     #serviceconsumer = models.CharField(db_column='ServiceConsumer', max_length=36, blank=True, null=True)  # Field name made lowercase.
     serviceconsumer = models.ForeignKey(ServiceconsumerT, db_column='ServiceConsumer')
     #servconsgroup = models.CharField(db_column='ServConsGroup', max_length=36, blank=True, null=True)  # Field name made lowercase.
@@ -593,6 +593,39 @@ class ServiceT(models.Model):
     class Meta:
         managed = False
         db_table = 'Service_T'
+
+    def get_service_name(self):
+        code_to_name = {
+            '0': '',
+            '-1': 'General',
+            '65537': 'Copy A4',
+            '65538': 'Copy A3',
+            '65539': 'Copy B4',
+            '65540': 'Copy B3',
+            '131073': 'Copy color A4',
+            '131074': 'Copy color A3',
+            '131075': 'Copy color B4',
+            '131076': 'Copy color B3',
+            '196609': 'Print A4',
+            '196610': 'Print A3',
+            '196611': 'Print B4',
+            '196612': 'Print B3',
+            '262145': 'Print color A4',
+            '262146': 'Print color A3',
+            '262147': 'Print color B4',
+            '262148': 'Print color B3',
+            '52429': 'Finishing option cutter',
+            '524290': 'Finishing option sorter',
+            '524291': 'Finishing option hole punching',
+            '524292': 'Finishing option stapling',
+            '524293': 'Finishing option Binding'
+        }
+
+        try:
+            to_return = code_to_name[str(self.servicecode)]
+        except KeyError:
+            to_return = ''
+        return to_return
 
 
 class SinglerowstatT(models.Model):

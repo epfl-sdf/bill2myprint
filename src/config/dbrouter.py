@@ -7,6 +7,8 @@ class MyPrintRouter(object):
         """
         Attempts to read build2myprint models go to MyPrint MSSQL DB.
         """
+        if model._meta.model_name == 'tsemester':
+            return 'semesters_db'
         if model._meta.app_label == 'uniflow':
             return 'myprint'
         elif model._meta.app_label == 'equitrac':
@@ -23,12 +25,15 @@ class MyPrintRouter(object):
         """
         Allow relations if both models are in the build2myprint app.
         """
+        if obj1._meta.model_name == 'tsemester' and \
+                obj2._meta.model_name == 'tsemester':
+            return True
         if obj1._meta.app_label == 'uniflow' and \
                 obj2._meta.app_label == 'uniflow':
             return True
         elif obj1._meta.app_label == 'equitrac' and \
                 obj2._meta.app_label == 'equitrac':
-            return 'equitrac_transactions'
+            return True
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):

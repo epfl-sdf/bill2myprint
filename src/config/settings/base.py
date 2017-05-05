@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bill2myprint',
+    'uniflow',
+    'equitrac',
     'userprofile',
     'django_tequila',
 ]
@@ -131,7 +133,7 @@ DATABASES = {
             'host_is_server': True,
             'extra_params': "TDS_VERSION=7.4"
         }
-    }
+    },
 }
 
 DATABASE_ROUTERS = ['config.dbrouter.MyPrintRouter']
@@ -167,7 +169,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

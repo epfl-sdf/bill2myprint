@@ -13,8 +13,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         students = TAllTransactions.objects.filter(hierarchie2='EPFL ETU').exclude(
             Q(hierarchie3__icontains='audit') | Q(hierarchie3__icontains='EME') | Q(hierarchie3__icontains='EDOC'))
-        students = students.values_list('person_sciper', 'hierarchie3').distinct()
+        students = students.values_list('person_sciper').distinct()
         for student in students:
-            section_acronym = re.search('EPFL ETU (.*)-.*', student[1]).group(1)
-            section = Section.objects.get(acronym=section_acronym)
-            Student.objects.create(sciper=student[0], section=section)
+            Student.objects.create(sciper=student[0])

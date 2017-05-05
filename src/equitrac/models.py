@@ -60,3 +60,15 @@ class TAllTransactions(models.Model):
         managed = False
         db_table = 'T_ALL_TRANSACTIONS'
         unique_together = (('trans_id', 'trans_origin'),)
+
+
+class TSemester(models.Model):
+    smst_id = models.AutoField(db_column='SMST_ID', primary_key=True)  # Field name made lowercase.
+    smst_name = models.CharField(db_column='SMST_NAME', max_length=50)  # Field name made lowercase.
+    smst_end_date = models.DateTimeField(db_column='SMST_END_DATE')  # Field name made lowercase.
+    smst_end_date_official = models.DateTimeField(db_column='SMST_END_DATE_OFFICIAL')  # Field name made lowercase.
+    smst_central_allowance_date = models.DateTimeField(db_column='SMST_CENTRAL_ALLOWANCE_DATE', blank=True, null=True)  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = 'T_SEMESTER'
