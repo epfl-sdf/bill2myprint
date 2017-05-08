@@ -7,7 +7,7 @@ from django.views.generic import ListView
 #from django.http import HttpResponseRedirect, HttpResponseNotFound
 #from django.urls import reverse
 
-from .models import ServiceconsumerT, BudgettransactionsT
+from uniflow.models import ServiceconsumerT, BudgettransactionsT
 from django.db.models import Sum
 
 
@@ -22,7 +22,7 @@ class SectionsView(LoginRequiredMixin, ListView):
     context_object_name = 'section_list'
 
     def get_queryset(self):
-	# The "S_StudU" part is prevented from being displayed with to the "cut" templatetag
+        # The "S_StudU" part is prevented from being displayed with to the "cut" templatetag
         return ServiceconsumerT.objects.filter(name__endswith='S_StudU')
 
 

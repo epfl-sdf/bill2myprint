@@ -12,5 +12,4 @@ urlpatterns = [
     url(r'^etudiants/total/(?P<studid>[A-Z0-9-]+)$', views.studentTotal, name='etudiant_total'),
     #url(r'^logged$', views.logged, name='logged'),
     url(r'^sections/$', views.SectionsView.as_view(), name='sections'),
-
 ]
