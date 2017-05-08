@@ -7,7 +7,7 @@ from django.views.generic import ListView
 #from django.http import HttpResponseRedirect, HttpResponseNotFound
 #from django.urls import reverse
 
-from .models import ServiceconsumerT, BudgettransactionsT
+from uniflow.models import ServiceconsumerT, BudgettransactionsT
 from django.db.models import Sum
 
 
