@@ -5,4 +5,4 @@
 #python django_example/manage.py runserver
 
 source ./.venv/bin/activate
-python src/manage.py runserver 0.0.0.0:8000
+python3 src/manage.py runserver 0.0.0.0:8000

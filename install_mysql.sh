@@ -20,11 +20,11 @@ sudo mysql --user="root" -e "$zSQL"
 mysqladmin -u root password $DB_ROOT_PASSWORD
 sudo apt-get install -y libmysqlclient-dev
 
-echo ------------ create table build2myprint
+echo ------------ create table bill2myprint
 source ./.venv/bin/activate
-zSQL=`echo "CREATE DATABASE build2myprint;\n"`
-zSQL=$zSQL`echo "CREATE USER "build2myprint"@"localhost";\n"`
-zSQL=$zSQL`echo "SET password FOR "build2myprint"@"localhost" = password('$OUR_DB_PASSWORD');\n"`
-zSQL=$zSQL`echo "GRANT ALL ON build2myprint.* TO "build2myprint"@"localhost";\n"`
+zSQL=`echo "CREATE DATABASE bill2myprint;\n"`
+zSQL=$zSQL`echo "CREATE USER "bill2myprint"@"localhost";\n"`
+zSQL=$zSQL`echo "SET password FOR "bill2myprint"@"localhost" = password('$OUR_DB_PASSWORD');\n"`
+zSQL=$zSQL`echo "GRANT ALL ON bill2myprint.* TO "bill2myprint"@"localhost";\n"`
 echo -e $zSQL
 mysql --user="root" --password=$DB_ROOT_PASSWORD -e "$zSQL"

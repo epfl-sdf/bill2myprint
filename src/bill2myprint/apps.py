@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class HelloWorldConfig(AppConfig):
-    name = 'hello_world'
+class Bill2MyPrintConfig(AppConfig):
+    name = 'bill2myprint'

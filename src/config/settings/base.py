@@ -79,7 +79,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = ('django_tequila.django_backend.TequilaBackend',)
-TEQUILA_SERVICE_NAME = "Hello world and Tequila"
+TEQUILA_SERVICE_NAME = "Bill2myprint and Tequila"
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/logged"
 LOGIN_REDIRECT_IF_NOT_ALLOWED = "/not_allowed"
@@ -117,8 +117,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'build2myprint',
-        'USER': 'build2myprint',
+        'NAME': 'bill2myprint',
+        'USER': 'bill2myprint',
         'PASSWORD': get_secret('OUR_DB_PASSWORD'),
     },
     'myprint': {
