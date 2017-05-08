@@ -12,7 +12,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         students = TAllTransactions.objects.filter(hierarchie2='EPFL ETU').exclude(
-            Q(hierarchie3__icontains='audit') | Q(hierarchie3__icontains='EME') | Q(hierarchie3__icontains='EDOC'))
-        students = students.values_list('person_sciper').distinct()
+            Q(hierarchie3__icontains='audit') | Q(hierarchie3__icontains='EDOC'))
+        students = students.values_list('person_sciper', 'account_name').distinct()
+        to_save = []
         for student in students:
-            Student.objects.create(sciper=student[0])
+            username = student[1]
+            if username is None:
+                username = ''
+            to_save.append(Student(sciper=student[0], username=username))
+        Student.objects.bulk_create(to_save)

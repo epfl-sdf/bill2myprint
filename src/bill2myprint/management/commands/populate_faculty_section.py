@@ -14,6 +14,7 @@ class Command(BaseCommand):
         'CDH',
         'CDM',
         'CMS',
+        'EME',
     ]
 
     sections = [
@@ -35,6 +36,7 @@ class Command(BaseCommand):
         ("Management de la technologie et de l'information", 'MGT', 'CDM'),
         ('Science et génie des matériaux', 'MX', 'STI'),
         ('Cours de mathématiques spéciales', 'CMS', 'CMS'),
+        ('EPFL Middle East', 'EME', 'EME'),
     ]
 
     def handle(self, *args, **options):

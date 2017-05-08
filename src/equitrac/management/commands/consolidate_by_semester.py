@@ -7,6 +7,12 @@ from equitrac.models import TAllTransactions
 from bill2myprint.models import Student, Semester, Transaction, Section
 
 
+def xstr(s):
+    if s is None:
+        return ''
+    return s
+
+
 class Command(BaseCommand):
     help = 'Populates the database with sections and the faculties'
 
@@ -20,25 +26,23 @@ class Command(BaseCommand):
             print('Semester: {}'.format(i))
             previous_semester = current_semester
             if not current_semester:
-                print('first')
                 current_semester = semester
                 semester_transactions = TAllTransactions.objects.filter(trans_datetime__lte=current_semester.end_date)
             else:
-                print('second')
                 current_semester = semester
                 semester_transactions = TAllTransactions.objects.filter(trans_datetime__lte=current_semester.end_date,
                                                                         trans_datetime__gt=previous_semester.end_date)
 
             semester_transactions = semester_transactions.filter(hierarchie2='EPFL ETU')
             semester_transactions = semester_transactions.exclude(Q(hierarchie3__icontains='audit') |
-                                                                  Q(hierarchie3__icontains='EME') |
                                                                   Q(hierarchie3__icontains='EDOC'))
             semester_transactions = semester_transactions.values_list('person_sciper',
                                                                       'hierarchie3',
                                                                       'trans_datetime',
                                                                       'trans_amount',
                                                                       'trans_origin',
-                                                                      'trans_description')
+                                                                      'trans_description',
+                                                                      'account_name')
             semester_transactions = semester_transactions.order_by('person_sciper')
 
             current_sciper = ''
@@ -54,7 +58,7 @@ class Command(BaseCommand):
                 if current_sciper != st[0]:
                     if student_total_spent != 0:
                         section = Section.objects.get(acronym=current_section_acronym)
-                        student = Student.objects.get(sciper=current_sciper)
+                        student = Student.objects.get(sciper=current_sciper, username=xstr(last_transaction[6]))
                         to_save.append(Transaction(transaction_type='PRINT_JOB',
                                             transaction_date=last_transaction[2],
                                             amount=student_total_spent,
@@ -67,7 +71,7 @@ class Command(BaseCommand):
                 elif current_section_acronym != st_section_acronym:
                     if student_total_spent != 0:
                         section = Section.objects.get(acronym=current_section_acronym)
-                        student = Student.objects.get(sciper=current_sciper)
+                        student = Student.objects.get(sciper=current_sciper, username=xstr(last_transaction[6]))
                         to_save.append(Transaction(transaction_type='PRINT_JOB',
                                             transaction_date=last_transaction[2],
                                             amount=student_total_spent,
@@ -78,7 +82,7 @@ class Command(BaseCommand):
                     student_total_spent = 0
 
                 if st[4] == 'T_STUD_ALLOWANCE':
-                    student = Student.objects.get(sciper=current_sciper)
+                    student = Student.objects.get(sciper=current_sciper, username=xstr(st[6]))
                     section = Section.objects.get(acronym=current_section_acronym)
                     if 'Rallonge' in st[5]:
                         to_save.append(Transaction(transaction_type='FACULTY_ALLOWANCE',
@@ -97,7 +101,7 @@ class Command(BaseCommand):
                     else:
                         raise ValueError('Type de transaction inconnue')
                 elif st[4] == 'T_ACCOUNT_CHARGING':
-                    student = Student.objects.get(sciper=current_sciper)
+                    student = Student.objects.get(sciper=current_sciper, username=xstr(st[6]))
                     section = Section.objects.get(acronym=current_section_acronym)
                     to_save.append(Transaction(transaction_type='ACCOUNT_CHARGING',
                                             transaction_date=st[2],

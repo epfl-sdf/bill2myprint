@@ -2,7 +2,9 @@ from django.db import models
 
 
 class Student(models.Model):
-    sciper = models.CharField(max_length=10, db_index=True, unique=True)
+    sciper = models.CharField(max_length=10, db_index=True, blank=True)
+    username = models.CharField(max_length=100, blank=True, db_index=True)
+    name = models.CharField(max_length=255, blank=True, db_index=True, default='')
 
     def __str__(self):
         return '{}'.format(self.sciper)
@@ -48,8 +50,8 @@ class Transaction(models.Model):
     semester = models.ForeignKey('Semester')
     amount = models.FloatField()
     student = models.ForeignKey('Student')
-    section = models.ForeignKey('Section')
-    cardinality = models.PositiveIntegerField(blank=True, default=0)
+    section = models.ForeignKey('Section', blank=True, null=True)
+    cardinality = models.PositiveIntegerField(blank=True, default=1)
     job_type = models.CharField(max_length=255, blank=True, default='')
 
     # def save(self, *args, **kwargs):
