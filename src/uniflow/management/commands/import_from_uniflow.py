@@ -73,12 +73,12 @@ class Command(BaseCommand):
         # If it is the first time this script is run, then take all transactions else take only new ones
         if options['first']:
             service_usages = ServiceusageT.objects.all().order_by('serviceconsumer')
-            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Allocation') |
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc') |
                                                                              Q(transactiondata__icontains='Rallonge') |
                                                                              Q(transactiondata__icontains='Camipro-Web-Load'))
         else:
             service_usages = ServiceusageT.objects.filter(usagebegin__gt=date_last_imported).order_by('serviceconsumer')
-            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Allocation') |
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc') |
                                                                              Q(transactiondata__icontains='Rallonge') |
                                                                              Q(transactiondata__icontains='Camipro-Web-Load') &
                                                                              Q(transactiontime__gt=date_last_imported))
@@ -146,7 +146,7 @@ class Command(BaseCommand):
                 if bt.amount == 0:
                         continue
                 semester = Semester.objects.filter(end_date__gte=bt.transactiontime)[0]
-                if 'allocation' in bt.transactiondata.lower():
+                if 'alloc' in bt.transactiondata.lower():
                     transaction_type = 'MYPRINT_ALLOWANCE'
                 elif 'rallonge' in bt.transactiondata.lower():
                     transaction_type = 'FACULTY_ALLOWANCE'
