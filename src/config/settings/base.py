@@ -118,6 +118,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'bill2myprint',
+	'HOST': '127.0.0.1',
         'USER': 'bill2myprint',
         'PASSWORD': get_secret('OUR_DB_PASSWORD'),
     },
