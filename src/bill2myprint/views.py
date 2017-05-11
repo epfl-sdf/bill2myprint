@@ -11,7 +11,7 @@ from django.views.generic import ListView
 from uniflow.models import ServiceconsumerT, BudgettransactionsT
 from bill2myprint.models import *
 
-from django.db.models import Sum
+from django.db.models import Sum, Q
 
 
 def index(request):
@@ -29,9 +29,15 @@ def students(request):
             for student in Student.objects.all():
                 for s_asked in semesters_asked:
                     vpsi = 24
-                    fac = student.transaction_set.filter(semester__name=s_asked, transaction_type='FACULTY_ALLOWANCE').annotate(total=Sum('amount'))[0].total
-                    added = student.transaction_set.filter(semester__name=s_asked, transaction_type='ACCOUNT_CHARGING').annotate(total=Sum('amount'))[0].total
-                    spent = student.transaction_set.filter(Q(transaction__transaction_type='PRINT_JOB')|Q(transaction__transaction_type='REFUND'), semester__name=s_asked).annotate(total=Sum('amount'))[0].total
+                    fac = student.transaction_set.filter(semester__name=s_asked, transaction_type='FACULTY_ALLOWANCE').annotate(total=Sum('amount'))
+                    if fac:
+                        fac = fac[0].total
+                    added = student.transaction_set.filter(semester__name=s_asked, transaction_type='ACCOUNT_CHARGING').annotate(total=Sum('amount'))
+                    if added:
+                        added = added[0].total
+                    spent = student.transaction_set.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND'), semester__name=s_asked).annotate(total=Sum('amount'))
+                    if spent:
+                        spent = spent[0].total
                     data.append({
                         'sciper': student.sciper,
                         'semester': s_asked,
