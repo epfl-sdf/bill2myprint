@@ -54,6 +54,17 @@ class Transaction(models.Model):
     cardinality = models.PositiveIntegerField(blank=True, default=1)
     job_type = models.CharField(max_length=255, blank=True, default='')
 
+    def __str__(self):
+        out = {
+            'date': self.transaction_date,
+            'type': self.transaction_type,
+            'semester': self.semester,
+            'student': self.student,
+            'section': self.section,
+            'amount': self.amount
+        }
+        return out.__str__()
+
     # def save(self, *args, **kwargs):
     #     semesters = Semester.objects.filter(end_date__gt=self.transaction_date)
     #     if semesters.count() > 0:

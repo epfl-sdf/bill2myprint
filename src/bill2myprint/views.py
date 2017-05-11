@@ -7,13 +7,42 @@ from django.views.generic import ListView
 #from django.http import HttpResponseRedirect, HttpResponseNotFound
 #from django.urls import reverse
 
+# Custom models
 from uniflow.models import ServiceconsumerT, BudgettransactionsT
+from bill2myprint.models import *
+
 from django.db.models import Sum
 
 
 def index(request):
     context = {'text': 'Hello world !'}
     return render(request, 'bill2myprint/index.html', context)
+
+def students(request):
+    context = {}
+    context['semesters'] =  Semesters.objects.all() 
+
+    if request.POST:
+        semesters_asked = request.POST.getlist('semesters')
+        if semesters_asked:
+	    data = []
+            for student in Student.objects.all():
+                for s_asked in semesters_asked:
+                    vpsi = 24
+                    fac = student.transaction_set.filter(semester__name=s_asked, transaction_type='FACULTY_ALLOWANCE').annotate(total=Sum('amount'))[0].total
+                    added = student.transaction_set.filter(semester__name=s_asked, transaction_type='ACCOUNT_CHARGING').annotate(total=Sum('amount'))[0].total
+                    spent = student.transaction_set.filter(semester__name=s_asked, Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).annotate(total=Sum('amount'))[0].total
+                    data.append({
+                        'sciper': student.sciper,
+                        'semester': s_asked,
+                        'vpsi': vpsi,
+                        'fac': fac,
+                        'perso': added,
+                        'spent': spent
+                    })
+            context['students': data]
+    return render(request, 'bill2myprint/students.html', context)
+
 
 
 class SectionsView(LoginRequiredMixin, ListView):
