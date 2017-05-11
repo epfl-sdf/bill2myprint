@@ -12,13 +12,17 @@
 {% if faculties and semesters %}
 <form action="{% url 'bille2myprint:students' %}" method="POST">
     {% for fac in enumerate(faculties) %}
-    <label for="{{ fac }}"></label>
+    <label for="{{ fac }}">{{ fac }}</label>
     <input type="checkbox" name="faculties[]" id="{{ fac }}" value="{{ fac }}">
+    <br>
     {% endfor %}
 
+    <br>
+
     {% for sem in enumerate(semesters) %}
-    <label for="{{ sem }}"></label>
+    <label for="{{ sem }}">{{ sem }}</label>
     <input type="checkbox" name="semesters[]" id="{{ sem }}" value="{{ sem }}">
+    <br>
     {% endfor %}
 
     <input type="submit">
