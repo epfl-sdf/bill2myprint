@@ -20,18 +20,18 @@ def index(request):
 
 def students(request):
     context = {}
-    context['semesters'] =  Semesters.objects.all() 
-
+    context['semesters'] =  Semester.objects.values_list('name', flat=True)
+    print(request.POST)
     if request.POST:
-        semesters_asked = request.POST.getlist('semesters')
+        semesters_asked = request.POST.getlist('semesters[]')
         if semesters_asked:
-	    data = []
+            data = []
             for student in Student.objects.all():
                 for s_asked in semesters_asked:
                     vpsi = 24
                     fac = student.transaction_set.filter(semester__name=s_asked, transaction_type='FACULTY_ALLOWANCE').annotate(total=Sum('amount'))[0].total
                     added = student.transaction_set.filter(semester__name=s_asked, transaction_type='ACCOUNT_CHARGING').annotate(total=Sum('amount'))[0].total
-                    spent = student.transaction_set.filter(semester__name=s_asked, Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).annotate(total=Sum('amount'))[0].total
+                    spent = student.transaction_set.filter(Q(transaction__transaction_type='PRINT_JOB')|Q(transaction__transaction_type='REFUND'), semester__name=s_asked).annotate(total=Sum('amount'))[0].total
                     data.append({
                         'sciper': student.sciper,
                         'semester': s_asked,
