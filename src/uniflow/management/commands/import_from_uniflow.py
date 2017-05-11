@@ -70,14 +70,15 @@ class Command(BaseCommand):
         date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         students_group_id = ServiceconsumerT.objects.get(name='Etudiant').id
         students_cost_center_id = ServiceconsumerT.objects.get(name='ETU').id
+        # If it is the first time this script is run, then take all transactions else take only new ones
         if options['first']:
             service_usages = ServiceusageT.objects.all().order_by('serviceconsumer')
-            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Allocation') |
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc') |
                                                                              Q(transactiondata__icontains='Rallonge') |
                                                                              Q(transactiondata__icontains='Camipro-Web-Load'))
         else:
             service_usages = ServiceusageT.objects.filter(usagebegin__gt=date_last_imported).order_by('serviceconsumer')
-            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Allocation') |
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc') |
                                                                              Q(transactiondata__icontains='Rallonge') |
                                                                              Q(transactiondata__icontains='Camipro-Web-Load') &
                                                                              Q(transactiontime__gt=date_last_imported))
@@ -85,8 +86,10 @@ class Command(BaseCommand):
         total = service_usages.count()
         next_batch_start = 0
         current_serviceconsumer_id = ''
-        batch_end = batch
-        while batch_end <= total:
+        batch_end = 0
+        # This loop handles ServiceUsage objects (print jobs)
+        while batch_end < total:
+            batch_end = min(total, batch_end + batch)
             print('Usages : ' + str(batch_end))
             to_save = []
             for su in service_usages[next_batch_start:batch_end]:
@@ -95,6 +98,7 @@ class Command(BaseCommand):
                         continue
                 except ServiceconsumerT.DoesNotExist:
                     continue
+                # This is only implemented to limit the number of database query we run
                 if not current_serviceconsumer_id or current_serviceconsumer_id != su.serviceconsumer.id:
                     current_serviceconsumer_id = su.serviceconsumer.id
                     student = self.get_student_from_uniflow(su.serviceconsumer)
@@ -120,13 +124,14 @@ class Command(BaseCommand):
                 )
             Transaction.objects.bulk_create(to_save)
             next_batch_start = batch_end
-            batch_end = min(total, batch_end + batch)
 
         total = uniflow_budget_transactions.count()
         current_serviceconsumer_id = ''
         next_batch_start = 0
-        batch_end = batch
-        while batch_end <= total:
+        batch_end = 0
+        # This loop handles BudgetTransactions, it uses the same principles as the previous one.
+        while batch_end < total:
+            batch_end = min(total, batch_end + batch)
             print('Budget : ' + str(batch_end))
             to_save = []
             for bt in uniflow_budget_transactions[next_batch_start:batch_end]:
@@ -141,7 +146,7 @@ class Command(BaseCommand):
                 if bt.amount == 0:
                         continue
                 semester = Semester.objects.filter(end_date__gte=bt.transactiontime)[0]
-                if 'allocation' in bt.transactiondata.lower():
+                if 'alloc' in bt.transactiondata.lower():
                     transaction_type = 'MYPRINT_ALLOWANCE'
                 elif 'rallonge' in bt.transactiondata.lower():
                     transaction_type = 'FACULTY_ALLOWANCE'
@@ -161,4 +166,3 @@ class Command(BaseCommand):
                 )
             Transaction.objects.bulk_create(to_save)
             next_batch_start = batch_end
-            batch_end = min(total, batch_end + batch)

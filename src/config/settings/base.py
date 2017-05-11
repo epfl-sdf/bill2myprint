@@ -134,6 +134,33 @@ DATABASES = {
             'extra_params': "TDS_VERSION=7.4"
         }
     },
+    # Beware that the account used here must have access to the database for this to work
+    # 'equitrac_transactions': {
+    #     'ENGINE': 'sql_server.pyodbc',
+    #     'HOST': 'mssql-tst-uat.epfl.ch',
+    #     'NAME': 'myPrint_eqcas_stats',
+    #     'USER': 'INTRANET\username_tequila_gaspar',
+    #     'PASSWORD': 'password_tequila',
+    #     'PORT': 1433,
+    #     'OPTIONS': {
+    #         'driver': 'FreeTDS',
+    #         'host_is_server': True,
+    #         'extra_params': "TDS_VERSION=8.0"
+    #     }
+    # },
+    # 'semesters_db': {
+    #     'ENGINE': 'sql_server.pyodbc',
+    #     'HOST': 'mssql-tst-uat.epfl.ch',
+    #     'NAME': 'myPrint_Accounts',
+    #     'USER': 'INTRANET\username_tequila_gaspar',
+    #     'PASSWORD': 'password_tequila',
+    #     'PORT': 1433,
+    #     'OPTIONS': {
+    #         'driver': 'FreeTDS',
+    #         'host_is_server': True,
+    #         'extra_params': "TDS_VERSION=8.0"
+    #     }
+    # },
 }
 
 DATABASE_ROUTERS = ['config.dbrouter.MyPrintRouter']
