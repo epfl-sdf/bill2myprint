@@ -1,0 +1,30 @@
+{% extends "bill2myprint/base.html" %}
+{% load static %}
+{% block template_main %}
+      {% if section_list %}
+      <div class="page-header">
+          <table data-toggle="table" id="datatable" class="table table-striped table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th data-sortable="true">Shorthand</th>
+                <th data-sortable="true">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+		{% for section in section_list %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ section.name|cut:"S_StudU" }}</td>
+                <td>{{ section.addressone }}</td>
+              </tr>
+		{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% else %}
+	<p> No sections</p>
+      {% endif %}
+
+{% endblock %}
