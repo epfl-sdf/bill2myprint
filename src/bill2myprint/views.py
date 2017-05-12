@@ -49,6 +49,38 @@ def students(request):
             context['students': data]
     return render(request, 'bill2myprint/students.html', context)
 
+def faculties(request):
+    context = {}
+    context['semesters'] =  Semester.objects.values_list('name', flat=True)
+    if request.POST:
+        semester_asked = request.POST.getlist('semesters[]')
+        if semester_asked:
+            data = []
+            for faculty in Faculty.objects.all():
+                for s_asked in semesters_asked:
+                    vpsi = fac = spent = 0
+                    for sec in faculty.section_set.all():
+                        transactions = sec.transaction_set.filter(semester__name=s_asked)
+                        vpsi += transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount')['total']
+                        fac += transactions.filter(transaction_type='FACULTY_ALLOWANCE').aggregate(total=Sum('amount'))['total']
+                        spent += transactions.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).aggregate(total=Sum('amount'))['total']
+                    data.append({
+                        'faculty': faculty.name,
+                        'semester': s_asked,
+                        'vpsi': vpsi,
+                        'fac': fac,
+                        'conso': conso
+                    })
+            context['faculties'] = data
+    return render(request, 'bill2myprint/faculties.html', context)
+
+def faculties(request):
+    context = {}
+    context['semesters'] =  Semester.objects.values_list('name', flat=True)
+    if request.POST:
+        semester_asked = request.POST.getlist('semesters[]')
+        if semester_asked:
+            data = []
 
 
 class SectionsView(LoginRequiredMixin, ListView):
