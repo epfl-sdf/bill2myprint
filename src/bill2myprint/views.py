@@ -57,7 +57,7 @@ def faculties(request):
         if semester_asked:
             data = []
             for faculty in Faculty.objects.all():
-                for s_asked in semesters_asked:
+                for s_asked in semester_asked:
                     vpsi = 0
                     fac = 0
                     spent = 0
