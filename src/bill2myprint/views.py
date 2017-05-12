@@ -63,9 +63,18 @@ def faculties(request):
                     spent = 0
                     for sec in faculty.section_set.all():
                         transactions = sec.transaction_set.filter(semester__name=s_asked)
-                        vpsi += transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount'))['total']
-                        fac += transactions.filter(transaction_type='FACULTY_ALLOWANCE').aggregate(total=Sum('amount'))['total']
-                        spent += transactions.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).aggregate(total=Sum('amount'))['total']
+                        vpsi_temp = transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount'))['total']
+                        fac_temp = transactions.filter(transaction_type='FACULTY_ALLOWANCE').aggregate(total=Sum('amount'))['total']
+                        spent_temp = transactions.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).aggregate(total=Sum('amount'))['total']
+                        if not vpsi_temp:
+                            vpsi_temp = 0
+                        if not fac_temp:
+                            fac_temp = 0
+                        if not spent_temp:
+                            spent_temp = 0
+                        vpsi += vpsi_temp
+                        fac += fac_temp
+                        spent += spent_temp
                     data.append({
                         'faculty': faculty.name,
                         'semester': s_asked,
