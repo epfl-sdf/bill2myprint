@@ -11,7 +11,8 @@ from django.views.generic import ListView
 from uniflow.models import ServiceconsumerT, BudgettransactionsT
 from bill2myprint.models import *
 
-from django.db.models import Sum, Q
+from django.db.models import Sum, Case, When, F, Q, FloatField, Value
+from django.core.cache import cache
 
 
 def index(request):
@@ -24,29 +25,29 @@ def students(request):
     print(request.POST)
     if request.POST:
         semesters_asked = request.POST.getlist('semesters[]')
+        semesters_objects = [Semester.objects.get(name=s) for s in semesters_asked]
         if semesters_asked:
-            data = []
-            for student in Student.objects.all():
-                for s_asked in semesters_asked:
-                    vpsi = 24
-                    fac = student.transaction_set.filter(semester__name=s_asked, transaction_type='FACULTY_ALLOWANCE').annotate(total=Sum('amount'))
-                    if fac:
-                        fac = fac[0].total
-                    added = student.transaction_set.filter(semester__name=s_asked, transaction_type='ACCOUNT_CHARGING').annotate(total=Sum('amount'))
-                    if added:
-                        added = added[0].total
-                    spent = student.transaction_set.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND'), semester__name=s_asked).annotate(total=Sum('amount'))
-                    if spent:
-                        spent = spent[0].total
-                    data.append({
-                        'sciper': student.sciper,
-                        'semester': s_asked,
-                        'vpsi': vpsi,
-                        'fac': fac,
-                        'perso': added,
-                        'spent': spent
-                    })
-            context['students': data]
+            data = Semester.objects.none()
+            for s_asked in semesters_objects:
+                data = data | s_asked.transaction_set.values('student__sciper', 'semester__name').annotate(
+                    vpsi=Value(24.0, FloatField()),
+                    fac=Sum(Case(
+                        When(transaction_type='FACULTY_ALLOWANCE', then=F('amount')),
+                        default=0.0,
+                        output_field=FloatField(),
+                    )),
+                    perso=Sum(Case(
+                        When(transaction_type='ACCOUNT_CHARGING', then=F('amount')),
+                        default=0.0,
+                        output_field=FloatField(),
+                    )),
+                    spent=Sum(Case(
+                        When(Q(transaction_type='PRINT_JOB') | Q(transaction_type='REFUND'), then=F('amount')),
+                        default=0.0,
+                        output_field=FloatField(),
+                    ))
+                )
+            context['students'] = data
     return render(request, 'bill2myprint/students.html', context)
 
 def faculties(request):
