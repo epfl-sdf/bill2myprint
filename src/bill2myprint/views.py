@@ -58,10 +58,12 @@ def faculties(request):
             data = []
             for faculty in Faculty.objects.all():
                 for s_asked in semesters_asked:
-                    vpsi = fac = spent = 0
+                    vpsi = 0
+                    fac = 0
+                    spent = 0
                     for sec in faculty.section_set.all():
                         transactions = sec.transaction_set.filter(semester__name=s_asked)
-                        vpsi += transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount')['total']
+                        vpsi += transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount'))['total']
                         fac += transactions.filter(transaction_type='FACULTY_ALLOWANCE').aggregate(total=Sum('amount'))['total']
                         spent += transactions.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).aggregate(total=Sum('amount'))['total']
                     data.append({
