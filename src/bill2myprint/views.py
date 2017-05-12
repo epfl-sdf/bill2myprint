@@ -76,15 +76,6 @@ def faculties(request):
             context['faculties'] = data
     return render(request, 'bill2myprint/faculties.html', context)
 
-def faculties(request):
-    context = {}
-    context['semesters'] =  Semester.objects.values_list('name', flat=True)
-    if request.POST:
-        semester_asked = request.POST.getlist('semesters[]')
-        if semester_asked:
-            data = []
-
-
 class SectionsView(LoginRequiredMixin, ListView):
     # Template attributes
     template_name = 'bill2myprint/sections.html'
