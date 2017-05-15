@@ -11,7 +11,8 @@ from django.views.generic import ListView
 from uniflow.models import ServiceconsumerT, BudgettransactionsT
 from bill2myprint.models import *
 
-from django.db.models import Sum, Q
+from django.db.models import Sum, Case, When, F, Q, FloatField, Value
+from django.core.cache import cache
 
 
 def index(request):
@@ -24,29 +25,29 @@ def students(request):
     print(request.POST)
     if request.POST:
         semesters_asked = request.POST.getlist('semesters[]')
+        semesters_objects = [Semester.objects.get(name=s) for s in semesters_asked]
         if semesters_asked:
-            data = []
-            for student in Student.objects.all():
-                for s_asked in semesters_asked:
-                    vpsi = 24
-                    fac = student.transaction_set.filter(semester__name=s_asked, transaction_type='FACULTY_ALLOWANCE').annotate(total=Sum('amount'))
-                    if fac:
-                        fac = fac[0].total
-                    added = student.transaction_set.filter(semester__name=s_asked, transaction_type='ACCOUNT_CHARGING').annotate(total=Sum('amount'))
-                    if added:
-                        added = added[0].total
-                    spent = student.transaction_set.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND'), semester__name=s_asked).annotate(total=Sum('amount'))
-                    if spent:
-                        spent = spent[0].total
-                    data.append({
-                        'sciper': student.sciper,
-                        'semester': s_asked,
-                        'vpsi': vpsi,
-                        'fac': fac,
-                        'perso': added,
-                        'spent': spent
-                    })
-            context['students': data]
+            data = Semester.objects.none()
+            for s_asked in semesters_objects:
+                data = data | s_asked.transaction_set.values('student__sciper', 'semester__name').annotate(
+                    vpsi=Value(24.0, FloatField()),
+                    fac=Sum(Case(
+                        When(transaction_type='FACULTY_ALLOWANCE', then=F('amount')),
+                        default=0.0,
+                        output_field=FloatField(),
+                    )),
+                    perso=Sum(Case(
+                        When(transaction_type='ACCOUNT_CHARGING', then=F('amount')),
+                        default=0.0,
+                        output_field=FloatField(),
+                    )),
+                    spent=Sum(Case(
+                        When(Q(transaction_type='PRINT_JOB') | Q(transaction_type='REFUND'), then=F('amount')),
+                        default=0.0,
+                        output_field=FloatField(),
+                    ))
+                )
+            context['students'] = data
     return render(request, 'bill2myprint/students.html', context)
 
 def faculties(request):
@@ -54,34 +55,92 @@ def faculties(request):
     context['semesters'] =  Semester.objects.values_list('name', flat=True)
     if request.POST:
         semester_asked = request.POST.getlist('semesters[]')
+        semesters_objects = [Semester.objects.get(name=s) for s in semester_asked]
         if semester_asked:
-            data = []
-            for faculty in Faculty.objects.all():
-                for s_asked in semester_asked:
-                    vpsi = 0
-                    fac = 0
-                    conso = 0
-                    for sec in faculty.section_set.all():
-                        transactions = sec.transaction_set.filter(semester__name=s_asked)
-                        vpsi_temp = transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount'))['total']
-                        fac_temp = transactions.filter(transaction_type='FACULTY_ALLOWANCE').aggregate(total=Sum('amount'))['total']
-                        conso_temp = transactions.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).aggregate(total=Sum('amount'))['total']
-                        if not vpsi_temp:
-                            vpsi_temp = 0
-                        if not fac_temp:
-                            fac_temp = 0
-                        if not conso_temp:
-                            conso_temp = 0
-                        vpsi += vpsi_temp
-                        fac += fac_temp
-                        conso += conso_temp
-                    data.append({
-                        'faculty': faculty.name,
-                        'semester': s_asked,
-                        'vpsi': vpsi,
-                        'fac': fac,
-                        'conso': conso
-                    })
+            data = Semester.objects.none()
+            for s_asked in semesters_objects:
+                data = data | s_asked.transaction_set.values('section__faculty__name', 'semester__name').annotate(
+                            vpsi=Sum(Case(
+                            When(transaction_type='MYPRINT_ALLOWANCE', then=F('amount')),
+                            default=0.0,
+                            output_field=FloatField(),
+                        )),
+                        fac=Sum(Case(
+                            When(transaction_type='FACULTY_ALLOWANCE', then=F('amount')),
+                            default=0.0,
+                            output_field=FloatField(),
+                        )),
+                        perso=Sum(Case(
+                            When(transaction_type='ACCOUNT_CHARGING', then=F('amount')),
+                            default=0.0,
+                            output_field=FloatField(),
+                        )),
+                        conso=Sum(Case(
+                            When(Q(transaction_type='PRINT_JOB') | Q(transaction_type='REFUND'), then=F('amount')),
+                            default=0.0,
+                            output_field=FloatField(),
+                        ))
+                    )
+           #for faculty in Faculty.objects.all():
+           #    section_semester_data = Section.objects.none()
+           #    for s_asked in semesters_objects:
+           #        for sec in faculty.section_set.all():
+           #            section_semester_data = section_semester_data | sec.transaction_set.filter(semester=s_asked).values('section__name', 'semester__name').annotate(
+           #                    vpsi=Sum(Case(
+           #                        When(transaction_type='MYPRINT_ALLOWANCE', then=F('amount')),
+           #                        default=0.0,
+           #                        output_field=FloatField(),
+           #                    )),
+           #                    fac=Sum(Case(
+           #                        When(transaction_type='FACULTY_ALLOWANCE', then=F('amount')),
+           #                        default=0.0,
+           #                        output_field=FloatField(),
+           #                    )),
+           #                    perso=Sum(Case(
+           #                        When(transaction_type='ACCOUNT_CHARGING', then=F('amount')),
+           #                        default=0.0,
+           #                        output_field=FloatField(),
+           #                    )),
+           #                    conso=Sum(Case(
+           #                        When(Q(transaction_type='PRINT_JOB') | Q(transaction_type='REFUND'), then=F('amount')),
+           #                        default=0.0,
+           #                        output_field=FloatField(),
+           #                    ))
+           #                )
+           #        total_vpsi = 0
+           #        total_fac = 0
+           #        total_conso = 0
+           #        for test in section_semester_data:
+           #            total_vpsi += test['vpsi']
+           #            total_fac += test['fac']
+           #            total_conso += test['conso']
+           #        data.append({
+           #            'faculty': faculty.name,
+           #            'semester': s_asked.name,
+           #            'vpsi': total_vpsi,
+           #            'fac': total_fac,
+           #            'conso': total_conso
+           #        })
+           #       #    transactions = sec.transaction_set.filter(semester__name=s_asked)
+           #       #    vpsi_temp = transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount'))['total']
+           #       #    fac_temp = transactions.filter(transaction_type='FACULTY_ALLOWANCE').aggregate(total=Sum('amount'))['total']
+           #       #    conso_temp = transactions.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).aggregate(total=Sum('amount'))['total']
+           #       #    if not vpsi_temp:
+           #       #        vpsi_temp = 0
+           #       #    if not fac_temp:
+           #       #        fac_temp = 0
+           #       #    if not conso_temp:
+           #       #        conso_temp = 0
+           #       #    vpsi += vpsi_temp
+           #       #    fac += fac_temp
+           #       #    conso += conso_temp
+           #       #data.append({
+           #       #    'faculty': faculty.name,
+           #       #    'semester': s_asked,
+           #       #    'vpsi': vpsi,
+           #       #    'fac': fac,
+           #       #    'conso': conso
+           #       #})
             context['faculties'] = data
     return render(request, 'bill2myprint/faculties.html', context)
 
