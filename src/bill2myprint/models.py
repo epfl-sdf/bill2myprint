@@ -63,7 +63,7 @@ class Transaction(models.Model):
             'section': self.section,
             'amount': self.amount
         }
-        return out.__str__()
+        return repr(out)
 
     # def save(self, *args, **kwargs):
     #     semesters = Semester.objects.filter(end_date__gt=self.transaction_date)
