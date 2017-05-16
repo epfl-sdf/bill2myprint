@@ -65,25 +65,15 @@ class Transaction(models.Model):
         }
         return out.__str__()
 
-    # def save(self, *args, **kwargs):
-    #     semesters = Semester.objects.filter(end_date__gt=self.transaction_date)
-    #     if semesters.count() > 0:
-    #         semester = semesters[0]
-    #     else:
-    #         raise AttributeError('La date donnée ne correspond à aucun semestre connu')
-    #     self.semester = semester
-    #     budget_semester = BudgetSemester.objects.get_or_create(student=self.student, semester=self.semester, section=self.section)[0]
-    #     if self.transaction_type == 'PRINT_JOB':
-    #         budget_semester.total_spent += self.amount
-    #         budget_semester.end_semester_budget += self.amount
-    #     else:
-    #         budget_semester.end_semester_budget += self.amount
-    #     super(Transaction, self).save(*args, **kwargs)
 
-
-class BudgetSemester(models.Model):
+class SemesterSummary(models.Model):
     student = models.ForeignKey('Student', on_delete=models.CASCADE)
     semester = models.ForeignKey('Semester')
     total_spent = models.FloatField(default=0)
-    end_semester_budget = models.FloatField(default=0)
+    total_charged = models.FloatField(default=0)
+    myprint_allowance = models.FloatField(default=0)
+    faculty_allowance = models.FloatField(default=0)
     section = models.ForeignKey('Section')
+
+    class Meta:
+        unique_together = ('student', 'semester', 'section')
