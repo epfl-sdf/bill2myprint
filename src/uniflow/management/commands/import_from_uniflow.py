@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.core.management.base import BaseCommand
 
 from uniflow.models import ServiceusageT, ServiceconsumerT, GroupmembershipT, Camipro, BudgettransactionsT
-from bill2myprint.models import Student, Semester, Transaction, Section
+from bill2myprint.models import Student, Semester, Transaction, Section, SemesterSummary
 
 
 class Command(BaseCommand):
@@ -49,6 +49,7 @@ class Command(BaseCommand):
             if student.count() == 0:
                 student = Student.objects.create(sciper=student_sciper, username=username, name=name)
             else:
+                assert student.count() == 1
                 student = student[0]
                 if student.name != name and name:
                     student.name=name
@@ -61,10 +62,29 @@ class Command(BaseCommand):
                 student = Student.objects.get_or_create(username=username)[0]
             except Student.MultipleObjectsReturned:
                 return None
-            if student.name != name:
+            if student.name != name and name:
                 student.name = name
                 student.save()
         return student
+
+    def update_semester_summary(self, student, section, semester, transaction_type, amount):
+        summary = SemesterSummary.objects.filter(student=student, section=section, semester=semester)
+        if summary.count() == 0:
+            summary = SemesterSummary(student=student, section=section, semester=semester)
+        else:
+            assert summary.count() == 1
+            summary = summary[0]
+        if transaction_type == 'REFUND' or transaction_type == 'PRINT_JOB':
+            summary.total_spent -= amount
+        elif transaction_type == 'MYPRINT_ALLOWANCE':
+            summary.myprint_allowance -= amount
+        elif transaction_type == 'FACULTY_ALLOWANCE':
+            summary.faculty_allowance -= amount
+        elif transaction_type == 'ACCOUNT_CHARGING':
+            summary.total_charged -= amount
+        else:
+            raise ValueError('Unknown transaction type')
+        summary.save()
 
     def handle(self, *args, **options):
         date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
@@ -72,16 +92,20 @@ class Command(BaseCommand):
         students_cost_center_id = ServiceconsumerT.objects.get(name='ETU').id
         # If it is the first time this script is run, then take all transactions else take only new ones
         if options['first']:
-            service_usages = ServiceusageT.objects.all().order_by('serviceconsumer')
+            service_usages = ServiceusageT.objects.filter(serviceconsumer__defaultgroupid=students_group_id,
+                                                          serviceconsumer__defaultcostcenter=students_cost_center_id)
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc') |
                                                                              Q(transactiondata__icontains='Rallonge') |
                                                                              Q(transactiondata__icontains='Camipro-Web-Load'))
         else:
-            service_usages = ServiceusageT.objects.filter(usagebegin__gt=date_last_imported).order_by('serviceconsumer')
+            service_usages = ServiceusageT.objects.filter(usagebegin__gt=date_last_imported,
+                                                          serviceconsumer__defaultgroupid=students_group_id,
+                                                          serviceconsumer__defaultcostcenter=students_cost_center_id)
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc') |
                                                                              Q(transactiondata__icontains='Rallonge') |
                                                                              Q(transactiondata__icontains='Camipro-Web-Load') &
                                                                              Q(transactiontime__gt=date_last_imported))
+        service_usages = service_usages.order_by('serviceconsumer')
         batch = 10000
         total = service_usages.count()
         next_batch_start = 0
@@ -122,6 +146,8 @@ class Command(BaseCommand):
                     cardinality=su.cardinality,
                     job_type=su.service.get_service_name())
                 )
+                self.update_semester_summary(student, section, semester, transaction_type, su.amountpaid)
+
             Transaction.objects.bulk_create(to_save)
             next_batch_start = batch_end
 
@@ -164,5 +190,6 @@ class Command(BaseCommand):
                     cardinality=1,
                     job_type='')
                 )
+                self.update_semester_summary(student, section, semester, transaction_type, bt.amount)
             Transaction.objects.bulk_create(to_save)
             next_batch_start = batch_end
