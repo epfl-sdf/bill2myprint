@@ -4,8 +4,6 @@ from django.contrib.auth.decorators import login_required # for custom views (fu
 from django.contrib.auth.mixins import LoginRequiredMixin # for generic views (classes)
 
 from django.views.generic import ListView
-#from django.http import HttpResponseRedirect, HttpResponseNotFound
-#from django.urls import reverse
 
 # Custom models
 from uniflow.models import ServiceconsumerT, BudgettransactionsT
@@ -19,6 +17,7 @@ def index(request):
     context = {'text': 'Hello world !'}
     return render(request, 'bill2myprint/index.html', context)
 
+@login_required
 def students(request):
     context = {}
     context['semesters'] =  Semester.objects.values_list('name', flat=True)
@@ -50,6 +49,7 @@ def students(request):
             context['students'] = data
     return render(request, 'bill2myprint/students.html', context)
 
+@login_required
 def faculties(request):
     context = {}
     context['semesters'] =  Semester.objects.values_list('name', flat=True)
