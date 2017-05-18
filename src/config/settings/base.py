@@ -60,7 +60,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'build2myprint',
+    'bill2myprint',
+    'uniflow',
+    'equitrac',
     'userprofile',
     'django_tequila',
 ]
@@ -77,7 +79,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = ('django_tequila.django_backend.TequilaBackend',)
-TEQUILA_SERVICE_NAME = "Hello world and Tequila"
+TEQUILA_SERVICE_NAME = "Bill2myprint and Tequila"
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/logged"
 LOGIN_REDIRECT_IF_NOT_ALLOWED = "/not_allowed"
@@ -115,8 +117,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'build2myprint',
-        'USER': 'build2myprint',
+        'NAME': 'bill2myprint',
+	'HOST': '127.0.0.1',
+        'USER': 'bill2myprint',
         'PASSWORD': get_secret('OUR_DB_PASSWORD'),
     },
     'myprint': {
@@ -131,7 +134,34 @@ DATABASES = {
             'host_is_server': True,
             'extra_params': "TDS_VERSION=7.4"
         }
-    }
+    },
+    # Beware that the account used here must have access to the database for this to work
+    # 'equitrac_transactions': {
+    #     'ENGINE': 'sql_server.pyodbc',
+    #     'HOST': 'mssql-tst-uat.epfl.ch',
+    #     'NAME': 'myPrint_eqcas_stats',
+    #     'USER': 'INTRANET\username_tequila_gaspar',
+    #     'PASSWORD': 'password_tequila',
+    #     'PORT': 1433,
+    #     'OPTIONS': {
+    #         'driver': 'FreeTDS',
+    #         'host_is_server': True,
+    #         'extra_params': "TDS_VERSION=8.0"
+    #     }
+    # },
+    # 'semesters_db': {
+    #     'ENGINE': 'sql_server.pyodbc',
+    #     'HOST': 'mssql-tst-uat.epfl.ch',
+    #     'NAME': 'myPrint_Accounts',
+    #     'USER': 'INTRANET\username_tequila_gaspar',
+    #     'PASSWORD': 'password_tequila',
+    #     'PORT': 1433,
+    #     'OPTIONS': {
+    #         'driver': 'FreeTDS',
+    #         'host_is_server': True,
+    #         'extra_params': "TDS_VERSION=8.0"
+    #     }
+    # },
 }
 
 DATABASE_ROUTERS = ['config.dbrouter.MyPrintRouter']
@@ -167,7 +197,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
