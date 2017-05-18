@@ -1,3 +1,4 @@
+import time
 from django.shortcuts import render, get_object_or_404
 # Authentication imports
 from django.contrib.auth.decorators import login_required # for custom views (functions)
@@ -17,11 +18,9 @@ def index(request):
     context = {'text': 'Hello world !'}
     return render(request, 'bill2myprint/index.html', context)
 
-@login_required
 def students(request):
     context = {}
     context['semesters'] =  Semester.objects.values_list('name', flat=True)
-    print(request.POST)
     if request.POST:
         semesters_asked = request.POST.getlist('semesters[]')
         semesters_objects = [Semester.objects.get(name=s) for s in semesters_asked]
@@ -37,7 +36,6 @@ def students(request):
             context['students'] = data
     return render(request, 'bill2myprint/students.html', context)
 
-@login_required
 def faculties(request):
     context = {}
     context['semesters'] =  Semester.objects.values_list('name', flat=True)
