@@ -27,25 +27,13 @@ def students(request):
         semesters_objects = [Semester.objects.get(name=s) for s in semesters_asked]
         if semesters_asked:
             data = Semester.objects.none()
-            for s_asked in semesters_objects:
-                data = data | s_asked.transaction_set.values('student__sciper', 'semester__name').annotate(
-                    vpsi=Value(24.0, FloatField()),
-                    fac=Sum(Case(
-                        When(transaction_type='FACULTY_ALLOWANCE', then=F('amount')),
-                        default=0.0,
-                        output_field=FloatField(),
-                    )),
-                    perso=Sum(Case(
-                        When(transaction_type='ACCOUNT_CHARGING', then=F('amount')),
-                        default=0.0,
-                        output_field=FloatField(),
-                    )),
-                    spent=Sum(Case(
-                        When(Q(transaction_type='PRINT_JOB') | Q(transaction_type='REFUND'), then=F('amount')),
-                        default=0.0,
-                        output_field=FloatField(),
-                    ))
-                )
+            data = SemesterSummary.objects.filter(semester__in=semesters_objects)
+            data = data.values('student__sciper',
+                               'semester__name',
+                               'myprint_allowance',
+                               'faculty_allowance',
+                               'total_charged',
+                               'total_spent')
             context['students'] = data
     return render(request, 'bill2myprint/students.html', context)
 
@@ -58,89 +46,13 @@ def faculties(request):
         semesters_objects = [Semester.objects.get(name=s) for s in semester_asked]
         if semester_asked:
             data = Semester.objects.none()
-            for s_asked in semesters_objects:
-                data = data | s_asked.transaction_set.values('section__faculty__name', 'semester__name').annotate(
-                            vpsi=Sum(Case(
-                            When(transaction_type='MYPRINT_ALLOWANCE', then=F('amount')),
-                            default=0.0,
-                            output_field=FloatField(),
-                        )),
-                        fac=Sum(Case(
-                            When(transaction_type='FACULTY_ALLOWANCE', then=F('amount')),
-                            default=0.0,
-                            output_field=FloatField(),
-                        )),
-                        perso=Sum(Case(
-                            When(transaction_type='ACCOUNT_CHARGING', then=F('amount')),
-                            default=0.0,
-                            output_field=FloatField(),
-                        )),
-                        conso=Sum(Case(
-                            When(Q(transaction_type='PRINT_JOB') | Q(transaction_type='REFUND'), then=F('amount')),
-                            default=0.0,
-                            output_field=FloatField(),
-                        ))
-                    )
-           #for faculty in Faculty.objects.all():
-           #    section_semester_data = Section.objects.none()
-           #    for s_asked in semesters_objects:
-           #        for sec in faculty.section_set.all():
-           #            section_semester_data = section_semester_data | sec.transaction_set.filter(semester=s_asked).values('section__name', 'semester__name').annotate(
-           #                    vpsi=Sum(Case(
-           #                        When(transaction_type='MYPRINT_ALLOWANCE', then=F('amount')),
-           #                        default=0.0,
-           #                        output_field=FloatField(),
-           #                    )),
-           #                    fac=Sum(Case(
-           #                        When(transaction_type='FACULTY_ALLOWANCE', then=F('amount')),
-           #                        default=0.0,
-           #                        output_field=FloatField(),
-           #                    )),
-           #                    perso=Sum(Case(
-           #                        When(transaction_type='ACCOUNT_CHARGING', then=F('amount')),
-           #                        default=0.0,
-           #                        output_field=FloatField(),
-           #                    )),
-           #                    conso=Sum(Case(
-           #                        When(Q(transaction_type='PRINT_JOB') | Q(transaction_type='REFUND'), then=F('amount')),
-           #                        default=0.0,
-           #                        output_field=FloatField(),
-           #                    ))
-           #                )
-           #        total_vpsi = 0
-           #        total_fac = 0
-           #        total_conso = 0
-           #        for test in section_semester_data:
-           #            total_vpsi += test['vpsi']
-           #            total_fac += test['fac']
-           #            total_conso += test['conso']
-           #        data.append({
-           #            'faculty': faculty.name,
-           #            'semester': s_asked.name,
-           #            'vpsi': total_vpsi,
-           #            'fac': total_fac,
-           #            'conso': total_conso
-           #        })
-           #       #    transactions = sec.transaction_set.filter(semester__name=s_asked)
-           #       #    vpsi_temp = transactions.filter(transaction_type='MYPRINT_ALLOWANCE').aggregate(total=Sum('amount'))['total']
-           #       #    fac_temp = transactions.filter(transaction_type='FACULTY_ALLOWANCE').aggregate(total=Sum('amount'))['total']
-           #       #    conso_temp = transactions.filter(Q(transaction_type='PRINT_JOB')|Q(transaction_type='REFUND')).aggregate(total=Sum('amount'))['total']
-           #       #    if not vpsi_temp:
-           #       #        vpsi_temp = 0
-           #       #    if not fac_temp:
-           #       #        fac_temp = 0
-           #       #    if not conso_temp:
-           #       #        conso_temp = 0
-           #       #    vpsi += vpsi_temp
-           #       #    fac += fac_temp
-           #       #    conso += conso_temp
-           #       #data.append({
-           #       #    'faculty': faculty.name,
-           #       #    'semester': s_asked,
-           #       #    'vpsi': vpsi,
-           #       #    'fac': fac,
-           #       #    'conso': conso
-           #       #})
+            data = SemesterSummary.objects.filter(semester__in=semesters_objects)
+            data = data.values('section__faculty__name', 'semester__name')
+            data = data.annotate(vpsi=Sum('myprint_allowance'),
+                                 fac=Sum('faculty_allowance'),
+                                 perso=Sum('total_charged'),
+                                 conso=Sum('total_spent')
+                                 )
             context['faculties'] = data
     return render(request, 'bill2myprint/faculties.html', context)
 
