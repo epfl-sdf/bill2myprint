@@ -1,4 +1,4 @@
-# Buill2myprint
+# Bill2myprint
 Example of Hello World in Django with Tequila Authentication
 
 

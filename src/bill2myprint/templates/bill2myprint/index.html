@@ -2,8 +2,10 @@
 {% load static %}
 
 {% block template_main %}
-    <ul>
-	<li><a href="{% url "bill2myprint:rallonge" %}">Rallonges facultaires</a></li>
-	<li><a href="{% url "bill2myprint:etudiants" %}">Etudiants</a></li>
+    <h1></h1>
+    <ul class='list-inline'>
+        <li><a href="{% url "bill2myprint:students" %}"><button class='btn btn-default'>Etudiants</button></a></li>
+        <li><a href="{% url "bill2myprint:faculties" %}"><button class='btn btn-default'>Facultées</button></a></li>
+        <li><a href="{% url "bill2myprint:rallonge2" %}"><button class='btn btn-default'>Rallonges facultaires</button></a></li>
     </ul>
 {% endblock %}
