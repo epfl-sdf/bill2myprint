@@ -77,3 +77,15 @@ class SemesterSummary(models.Model):
 
     class Meta:
         unique_together = ('student', 'semester', 'section')
+
+    def __str__(self):
+        out = {
+                'student': self.student,
+                'section': self.section,
+                'semester': self.semester,
+                'total_spent': self.total_spent,
+                'total_charged': self.total_charged,
+                'myprint_allowance': self.myprint_allowance,
+                'faculty_allowance': self.faculty_allowance
+                }
+        return repr(out)
