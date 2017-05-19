@@ -14,17 +14,20 @@
 {% csrf_token %}
     {% for fac in faculties %}
     <label for="{{ fac }}">{{ fac }}</label>
-    <input type="checkbox" name="faculties[]" id="{{ fac }}" value="{{ fac }}">
+    <input type="radio" name="faculties[]" id="{{ fac }}" value="{{ fac }}">
     <br>
     {% endfor %}
 
     <br>
 
-    {% for sem in enumerate(semesters) %}
+    {% for sem in semesters %}
     <label for="{{ sem }}">{{ sem }}</label>
     <input type="checkbox" name="semesters[]" id="{{ sem }}" value="{{ sem }}">
     <br>
     {% endfor %}
+
+    <label for"student">Détail par étudiant</label>
+    <input type="checkbox" id="student" name="student" value="student">
 
     <input type="submit">
 </form>
@@ -51,42 +54,51 @@
 
 <div class="row">
     <div>
-        {% if students and sections %}
+        {% if sections %}
         <table data-toggle="table" class="table table-striped table-bordered table-hover">
             <thead>
                 <tr>
                     <th data-field="name" data-sortable="true">Section</th>
-                    <th data-field="total" data-sortable="true">Dépense totale des étudiants</th>
+                    <th data-field="cost" data-sortable="true">Coût à la faculté</th>
                 </tr>
             </thead>
             <tbody>
                 {% for sec in sections %}
                 <tr>
-                    <td>{{ sec.name }}</td>
-                    <td>{{ sec.total }}</td>
+                    <td>{{ sec.section__acronym }}</td>
+                    <td>{{ sec.faculty_cost | floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-
-        <table data-toggle="table" class="table table-striped table-bordered table-hover">
-            <thead>
-                <tr>
-                    <th data-field="name" data-sortable="true">Étudiant</th>
-                    <th data-field="total" data-sortable="true">Dépense totale des étudiants</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for student in students %}
-                <tr>
-                    <td>{{ student.name }}</td>
-                    <td>{{ student.total }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            {% if students %}
+            <table data-toggle="table" class="table table-striped table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th data-field="sciper" data-sortable="true">Sciper</th>
+                        <th data-field="section" data-sortable="true">Section</th>
+                        <th data-field="vpsi" data-sortable="true">Crédit VPSI</th>
+                        <th data-field="fac" data-sortable="true">Rallonge facultaire</th>
+                        <th data-field="spent" data-sortable="true">Dépense de l'étudiant</th>
+                        <th data-field="cost" data-sortable="true">Coût à la faculté</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.student__sciper }}</td>
+                        <td>{{ student.section__acronym }}</td>
+                        <td>{{ student.myprint_allowance | floatformat:2 }}</td>
+                        <td>{{ student.faculty_allowance | floatformat:2 }}</td>
+                        <td>{{ student.total_spent | floatformat:2 }}</td>
+                        <td>{{ student.faculty_cost | floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
         {% else %}
-        <p>Seléctionnez un semestre pour voir les données</p>
+        <p>Seléctionnez un semestre et une faculté pour voir les données</p>
         {% endif %}
     </div>
 </div>
