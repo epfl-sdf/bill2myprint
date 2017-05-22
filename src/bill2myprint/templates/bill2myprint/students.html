@@ -1,8 +1,102 @@
 {% extends "bill2myprint/base.html" %}
+
+
+{% block template_main %}
+<h1>Étudiant</h1>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <form id="student_form" action="{% url 'default_students' %}" method="POST">{% csrf_token %}
+            <div class="row">
+                <div class="col-md-4">
+                    <h4>Rechercher: </h4>
+                </div>
+                <div class="col-md-8">
+                    <input class="autocomplete-student" type="text" name="student" placeholder="Numéro sciper ou Nom">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Nom: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ student.name }}</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Username: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ student.username }}</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Sciper: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ student.sciper }}</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Crédit: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ credit }}</h4>
+    </div>
+</div>
+
+
+<div class="row" style="margin-top: 30px;">
+    <div>
+        <table data-toggle="table" class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th data-field="date" data-sortable="true">Date</th>
+                    <th data-field="semester" data-sortable="true">Semestre</th>
+                    <th data-field="section" data-sortable="true">Section</th>
+                    <th data-field="type" data-sortable="true">Type</th>
+                    <th data-field="cardinality" data-sortable="true">Nombre opérations</th>
+                    <th data-field="amount" data-sortable="true">Montant</th>
+                    <th data-field="job" data-sortable="true">Remarques</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.transaction_date }}</td>
+                    <td>{{ transaction.semester }}</td>
+                    <td>{{ transaction.section__acronym }}</td>
+                    <td>{{ transaction.transaction_type }}</td>
+                    <td>{{ transaction.cardinality }}</td>
+                    <td>{{ transaction.amount }}</td>
+                    <td>{{ transaction.job_type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+
+
+
+{% comment %}
+
 {% load static %}
 {% load templatetags %}
 
-{% block template_main %}
 
 <div class="page-header">
   <h1>Etudiants</h1>
@@ -10,7 +104,7 @@
 
 {# .... List of semesters to choose from .... #}
 {% if semesters %}
-    <form action="{% url 'bill2myprint:students' %}" method="POST">
+    <form action="{% url 'students' %}" method="POST">
 	{% csrf_token %}
         {% for sem in semesters %}
         <label for="{{ sem }}">{{ sem }}</label>
@@ -90,5 +184,7 @@
     </span>
 </div>
 {% endif %}
+
+{% endcomment %}
 
 {% endblock %}

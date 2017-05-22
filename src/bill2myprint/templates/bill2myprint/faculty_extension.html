@@ -1,0 +1,30 @@
+{% extends "bill2myprint/base.html" %}
+
+
+{% block template_main %}
+<h1>Rallonges facultaires</h1>
+
+<div class="row">
+    <table data-toggle="table" class="table table-striped table-bordered table-hover">
+        <thead>
+            <tr>
+                <th data-field="faculty" data-sortable="true">Faculté</th>
+                <th data-field="section" data-sortable="true">Section</th>
+                <th data-field="transaction" data-sortable="true">Entité</th>
+                <th data-field="amount" data-sortable="true">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for extension in faculties_extensions %}
+            <tr>
+                <td>{{ extension.faculty }}</td>
+                <td>{{ extension.section }}</td>
+                <td>{{ extension.entity }}</td>
+                <td>{{ extension.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
