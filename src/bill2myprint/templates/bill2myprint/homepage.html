@@ -55,7 +55,7 @@
                 {% for fac in faculties %}
                 <tr>
                     <td><a href="{% url 'faculties' faculty=fac.section__faculty__name semester=current_semester %}">{{ fac.section__faculty__name }}</a></td>
-                    <td>{{ fac.amount }}</td>
+                    <td class="cell-for-numbers">{{ fac.amount|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

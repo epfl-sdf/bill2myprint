@@ -20,7 +20,7 @@
                 <td>{{ extension.faculty }}</td>
                 <td>{{ extension.section }}</td>
                 <td>{{ extension.entity }}</td>
-                <td>{{ extension.amount }}</td>
+                <td class="cell-for-numbers">{{ extension.amount|floatformat:2 }}</td>
             </tr>
             {% endfor %}
         </tbody>

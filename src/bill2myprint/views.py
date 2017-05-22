@@ -113,16 +113,16 @@ def faculties(request, faculty="", semester=""):
         dict = {}
         dict['section'] = section
         if section_data:
-            dict['vpsi'] = section_data.aggregate(credit=Sum('myprint_allowance'))['credit']
-            dict['faculty'] = section_data.aggregate(credit=Sum('faculty_allowance'))['credit']
-            dict['add_students'] = section_data.aggregate(credit=Sum('total_charged'))['credit']
-            dict['students'] = section_data.aggregate(credit=Sum('total_spent'))['credit']
+            dict['vpsi'] = section_data.aggregate(Sum('myprint_allowance'))['myprint_allowance__sum']
+            dict['faculty'] = section_data.aggregate(Sum('faculty_allowance'))['faculty_allowance__sum']
+            dict['added'] = section_data.aggregate(Sum('total_charged'))['total_charged__sum']
+            dict['spent'] = section_data.aggregate(Sum('total_spent'))['total_spent__sum']
             dict['amount'] = 0
         else:
             dict['vpsi'] = 0
             dict['faculty'] = 0
-            dict['add_students'] = 0
-            dict['students'] = 0
+            dict['added'] = 0
+            dict['spent'] = 0
             dict['amount'] = 0
         sections_data.append(dict)
 
@@ -207,9 +207,6 @@ def students(request, sciper=""):
 
         transactions = Transaction.objects.filter(student__sciper=student_sciper)
 
-        credit = transactions.aggregate(credit=Sum('amount'))['credit']
-        transactions = transactions.order_by("-transaction_date")
-
     elif student_name:
         try:
             student = Student.objects.get(name=student_name)
@@ -218,13 +215,30 @@ def students(request, sciper=""):
 
         transactions = Transaction.objects.filter(student__name=student_name)
 
-        credit = transactions.aggregate(credit=Sum('amount'))['credit']
-        transactions = transactions.order_by("-transaction_date")
-
     else:
         student = None
         transactions = None
-        credit = 0
+
+    if transactions:
+        cumulated = list(transactions.values('transaction_type').annotate(Sum('amount')))
+        transactions = transactions.order_by("-transaction_date")
+    else:
+        cumulated = None
+
+    t = {'vpsi': 0, 'faculty': 0, 'added': 0, 'spent': 0, 'credit': 0}
+    if cumulated:
+        for cumulus in cumulated:
+            if cumulus['transaction_type'] == 'MYPRINT_ALLOWANCE':
+                t['vpsi'] = cumulus['amount__sum']
+            if cumulus['transaction_type'] == 'FACULTY_ALLOWANCE':
+                t['faculty'] = cumulus['amount__sum']
+            if cumulus['transaction_type'] == 'ACCOUNT_CHARGING':
+                t['added'] = cumulus['amount__sum']
+            if cumulus['transaction_type'] == 'PRINT_JOB':
+                t['spent'] = t['spent'] + cumulus['amount__sum']
+            if cumulus['transaction_type'] == 'REFUND':
+                t['spent'] = t['spent'] + cumulus['amount__sum']
+        t['credit'] = t['vpsi'] + t['faculty'] + t['added'] + t['spent']
 
     return render(
         request,
@@ -233,7 +247,7 @@ def students(request, sciper=""):
             'is_students': True,
             'student': student,
             'transactions': transactions,
-            'credit': credit,
+            'cumulated': t,
         }
     )
 

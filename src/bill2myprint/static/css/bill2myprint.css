@@ -126,6 +126,16 @@ div.btn-group ul.scrollable-menu {
     top: 45%;
 }
 
+/*
+ * Table
+ *
+ */
+
+.cell-for-numbers {
+    text-align: right;
+}
+
+
 /**
  * Autocomplete
  *

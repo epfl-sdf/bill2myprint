@@ -69,11 +69,11 @@
                 {% for section in sections_data %}
                 <tr>
                     <td><a href="{% url 'sections' faculty=current_faculty section=section.section semester=current_semester %}">{{ section.section }}</a></td>
-                    <td>{{ section.vpsi }}</td>
-                    <td>{{ section.faculty }}</td>
-                    <td>{{ section.add_students }}</td>
-                    <td>{{ section.students }}</td>
-                    <td>{{ section.amount }}</td>
+                    <td class="cell-for-numbers">{{ section.vpsi|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ section.faculty|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ section.added|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ section.spent|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ section.amount|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

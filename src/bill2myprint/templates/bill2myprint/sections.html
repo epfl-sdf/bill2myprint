@@ -90,10 +90,10 @@
                     {% else %}
                     <td><a href="{% url 'students' sciper=student.student__sciper %}">{{ student.student__sciper }}</a></td>
                     {% endif %}
-                    <td>{{ student.myprint_allowance }}</td>
-                    <td>{{ student.faculty_allowance }}</td>
-                    <td>{{ student.total_charged }}</td>
-                    <td>{{ student.total_spent }}</td>
+                    <td class="cell-for-numbers">{{ student.myprint_allowance|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ student.faculty_allowance|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ student.total_charged|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ student.total_spent|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
