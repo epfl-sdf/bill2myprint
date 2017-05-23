@@ -12,7 +12,7 @@ class Student(models.Model):
 
 class Section(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    acronym = models.CharField(max_length=10, unique=True)
+    acronym = models.CharField(max_length=10, unique=True, db_index=True)
     faculty = models.ForeignKey('Faculty')
 
     def __str__(self):
@@ -28,7 +28,7 @@ class Faculty(models.Model):
 
 class Semester(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    end_date = models.DateTimeField()
+    end_date = models.DateTimeField(db_index=True)
     end_date_official = models.DateTimeField()
 
     def __str__(self):
@@ -45,7 +45,7 @@ class Transaction(models.Model):
         ('REFUND', "Remboursement sur travail d'impression")
     )
 
-    transaction_type = models.CharField(max_length=100, choices=TYPE_CHOICES, db_index=True)
+    transaction_type = models.CharField(max_length=100, choices=TYPE_CHOICES)
     transaction_date = models.DateTimeField()
     semester = models.ForeignKey('Semester')
     amount = models.FloatField()
@@ -77,3 +77,15 @@ class SemesterSummary(models.Model):
 
     class Meta:
         unique_together = ('student', 'semester', 'section')
+
+
+class UpdateStatus(models.Model):
+
+    STATUS_CHOICES = (
+        ('SUCCESS', 'Consolidation terminée avec succès'),
+        ('FAILURE', 'Erreur durant la consolidation')
+    )
+
+    update_date = models.DateTimeField()
+    status = models.CharField(max_length=100, choices=STATUS_CHOICES)
+    message = models.CharField(max_length=255, blank=True, default='')
