@@ -331,7 +331,8 @@ def faculty_extension(request):
 
 
 def status(request):
-    status_table= UpdateStatus.objects.order_by("update_date")
+    status_table= UpdateStatus.objects.order_by("-update_date")
+
     return render(
         request,
         'bill2myprint/status.html',
