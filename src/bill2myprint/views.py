@@ -1,5 +1,6 @@
 import time
 import json
+from collections import defaultdict
 from datetime import datetime
 
 from django.http import HttpResponse
@@ -117,19 +118,13 @@ def faculties(request, faculty="", semester=""):
     sections_data = []
     for section in sections:
         section_data = semesters_data.filter(section__acronym=section)
-        dict = {}
+        dict = defaultdict(float)
         dict['section'] = section
         if section_data:
             dict['vpsi'] = section_data.aggregate(Sum('myprint_allowance'))['myprint_allowance__sum']
             dict['faculty'] = section_data.aggregate(Sum('faculty_allowance'))['faculty_allowance__sum']
             dict['added'] = section_data.aggregate(Sum('total_charged'))['total_charged__sum']
             dict['spent'] = section_data.aggregate(Sum('total_spent'))['total_spent__sum']
-            dict['amount'] = 0
-        else:
-            dict['vpsi'] = 0
-            dict['faculty'] = 0
-            dict['added'] = 0
-            dict['spent'] = 0
             dict['amount'] = 0
         sections_data.append(dict)
 
@@ -232,7 +227,7 @@ def students(request, sciper=""):
     else:
         cumulated = None
 
-    t = {'vpsi': 0, 'faculty': 0, 'added': 0, 'spent': 0, 'credit': 0}
+    t = defaultdict(float)
     if cumulated:
         for cumulus in cumulated:
             if cumulus['transaction_type'] == 'MYPRINT_ALLOWANCE':
