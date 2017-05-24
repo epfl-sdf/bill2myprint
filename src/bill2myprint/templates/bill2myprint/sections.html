@@ -1,5 +1,112 @@
 {% extends "bill2myprint/base.html" %}
+
+
+{% block template_main %}
+<h1>Sections</h1>
+
+<form id="section_form" action="{% url 'default_sections' %}" method="POST">{% csrf_token %}
+    <div class="row">
+        <div class="col-md-4">
+            <h4>Faculté: </h4>
+        </div>
+        <div class="col-md-8">
+            <input type="hidden" id="faculty" name="faculty" value="{{ current_faculty }}"/>
+            <div id="sections_faculty" class="btn-group">
+                <label class="dropdown-toggle" data-toggle="dropdown">
+                    {{ current_faculty }}  <span class="caret"></span>
+                </label>
+                <ul class="dropdown-menu scrollable-menu" role="menu">
+                    {% for faculty in faculties %}
+                    <li><label>{{ faculty }}</label></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <h4>Section: </h4>
+        </div>
+        <div class="col-md-8">
+            <input type="hidden" id="section" name="section" value="{{ current_section }}"/>
+            <div id="sections_section" class="btn-group">
+                <label class="dropdown-toggle" data-toggle="dropdown">
+                    {{ current_section }}  <span class="caret"></span>
+                </label>
+                <ul class="dropdown-menu scrollable-menu" role="menu">
+                    {% for section in sections %}
+                    <li><label>{{ section }}</label></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <h4>Semestre: </h4>
+        </div>
+        <div class="col-md-8">
+            <input type="hidden" id="semester" name="semester" value="{{ current_semester }}"/>
+            <div id="sections_semester" class="btn-group">
+                <label class="dropdown-toggle" data-toggle="dropdown">
+                    {{ current_semester }}  <span class="caret"></span>
+                </label>
+                <ul class="dropdown-menu scrollable-menu" role="menu">
+                    {% for semester in semesters %}
+                    <li><label>{{ semester }}</label></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Nombre d'étudiants: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ number_of_students }}</h4>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 30px;">
+    <div>
+        <table data-toggle="table" class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th data-field="sciper" data-sortable="true">Sciper</th>
+                    <th data-field="vpsi" data-sortable="false">Crédit VPSI</th>
+                    <th data-field="faculty" data-sortable="false">Crédit section</th>
+                    <th data-field="student" data-sortable="true">Crédit étudiant</th>
+                    <th data-field="amount" data-sortable="true">Dépense étudiant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    {% if student.student__sciper == '' %}
+                    <td>{{ student.student__sciper }}</td>
+                    {% else %}
+                    <td><a href="{% url 'students' sciper=student.student__sciper %}">{{ student.student__sciper }}</a></td>
+                    {% endif %}
+                    <td class="cell-for-numbers">{{ student.myprint_allowance|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ student.faculty_allowance|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ student.total_charged|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ student.total_spent|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% comment %}
+
+{% extends "bill2myprint/base.html" %}
 {% load static %}
+
 {% block template_main %}
       {% if section_list %}
       <div class="page-header">
@@ -28,3 +135,5 @@
       {% endif %}
 
 {% endblock %}
+
+{% endcomment %}

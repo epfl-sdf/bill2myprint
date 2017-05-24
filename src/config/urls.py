@@ -16,11 +16,11 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.shortcuts import render
-
 from django_tequila.urls import urlpatterns as django_tequila_urlpatterns
-
 from django_tequila.admin import TequilaAdminSite
+
 admin.site.__class__ = TequilaAdminSite
+
 
 urlpatterns = [
     url(r'^', include('bill2myprint.urls')),
