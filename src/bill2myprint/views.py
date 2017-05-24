@@ -155,8 +155,11 @@ def sections(request, faculty="", section="", semester=""):
     current_faculty = __get_current_faculty(faculties=faculties, post=request.POST, arg=faculty)
     sections = __get_sections_by_faculty(current_faculty)
 
-    current_section = section if section else \
-        request.POST['section'] if 'section' in request.POST and request.POST['section'] in sections else sections[0]
+    current_section = sections[0]
+    if section:
+        current_section = section
+    elif ('section' in request.POST) and (request.POST['section'] in sections):
+            current_section = request.POST['section']
 
     students = SemesterSummary.objects.\
         filter(semester__name=current_semester).\
