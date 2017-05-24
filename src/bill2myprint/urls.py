@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^students/$', views.students, name='students'),
     url(r'^faculties/$', views.faculties, name='faculties'),
+    url(r'^detail/$', views.detail, name='detail'),
     #url(r'^rallonge/$', views.RallongeFacultaireView.as_view(), name='rallonge'),
     url(r'^rallonge2/$', views.RallongeFacultaire2View.as_view(), name='rallonge2'),
     #url(r'^etudiants/$', views.StudentsView.as_view(), name='etudiants'),
