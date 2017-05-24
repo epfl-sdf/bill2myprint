@@ -1,4 +1,5 @@
 {% extends "bill2myprint/base.html" %}
+{% load static %}
 
 
 {% block template_main %}
@@ -8,8 +9,13 @@
     <div class="col-md-4">
         <h4>Dernière mise à jour: </h4>
     </div>
-    <div class="col-md-8">
-        <h4>{{ last_update }}</h4>
+    <div class="col-md-8" style="padding-top: 10px;">
+        <h4 style="display: inline">{{ last_update.update_date }}</h4>
+        {% if last_update.status == 'SUCCESS' %}
+        <img style="margin-top:-5px" src="{% static "img/status_success.png" %}">
+        {% else %}
+        <img style="margin-top:-5px" src="{% static "img/status_failed.png" %}">
+        {% endif %}
     </div>
 </div>
 <div class="row">

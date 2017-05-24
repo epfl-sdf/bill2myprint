@@ -1,7 +1,35 @@
 {% extends "bill2myprint/base.html" %}
+{% load static %}
 
 
 {% block template_main %}
 <h1>Statuts des mises à jour</h1>
+
+<div class="row">
+    <table data-toggle="table" class="table table-striped table-bordered table-hover">
+        <thead>
+            <tr>
+                <th data-field="date" data-sortable="true">Date</th>
+                <th data-field="status" data-sortable="true">Statut</th>
+                <th data-field="message" data-sortable="true">Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for status in status_table %}
+            <tr>
+                <td>{{ status.update_date }}</td>
+                <td>
+                    {% if status.status == 'SUCCESS' %}
+                    <img style="margin-top:-5px" src="{% static "img/status_success.png" %}">
+                    {% else %}
+                    <img style="margin-top:-5px" src="{% static "img/status_failed.png" %}">
+                    {% endif %}
+                </td>
+                <td>{{ status.message }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 {% endblock %}

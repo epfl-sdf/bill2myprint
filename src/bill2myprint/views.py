@@ -92,6 +92,8 @@ def homepage(request):
 
     number_of_students = __get_number_of_students(semester=current_semester)
 
+    last_update = UpdateStatus.objects.latest(field_name="update_date")
+
     return render(
         request,
         'bill2myprint/homepage.html',
@@ -100,7 +102,7 @@ def homepage(request):
             'current_semester': current_semester,
             'semesters': semesters,
             'faculties': faculties,
-            'last_update': "18 mai 2017 08:25",
+            'last_update': last_update,
             'number_of_students': number_of_students,
         }
     )
@@ -329,11 +331,13 @@ def faculty_extension(request):
 
 
 def status(request):
+    status_table= UpdateStatus.objects.order_by("update_date")
     return render(
         request,
         'bill2myprint/status.html',
         {
             'is_miscellaneous': True,
+            'status_table': status_table,
         }
     )
 
