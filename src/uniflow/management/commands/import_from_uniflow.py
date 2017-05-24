@@ -45,8 +45,14 @@ class Command(BaseCommand):
         except Camipro.DoesNotExist:
             student_sciper = VPersonDeltaHistory.get_sciper_at_time(username, transaction_time)
             if student_sciper is None:
-                print('ATTENTION: {} {}'.format(username, transaction_time))
-                return None
+                pattern = re.compile("^\d{6}$")
+                if pattern.match(username):
+                    student_sciper = username
+                    username = VPersonDeltaHistory.get_username_at_time(student_sciper, transaction_time)
+                    name = VPersonDeltaHistory.get_name_at_time(student_sciper, transaction_time)
+                else:
+                    print('ATTENTION: {} {}'.format(username, transaction_time))
+                    return None
         student, created = Student.objects.get_or_create(sciper=student_sciper)
         if student.name != name and name:
             student.name = name
