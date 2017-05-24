@@ -1,15 +1,22 @@
+import time
+import json
+from datetime import datetime
+
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.views.generic import ListView
 from django.core.exceptions import ObjectDoesNotExist
-from datetime import datetime
+from django.db.models import Sum, Q
+# Authentication imports
+from django.contrib.auth.decorators import login_required  # for custom views (functions)
+from django.contrib.auth.mixins import LoginRequiredMixin  # for generic views (classes)
+
+# Custom models
 from uniflow.models import ServiceconsumerT, BudgettransactionsT
 from bill2myprint.models import *
-from django.db.models import Sum, Q
 
-import json
 
 
 ##########################
@@ -255,9 +262,12 @@ def students(request, sciper=""):
     """
     data = ()
     if request.POST:
+        # Get all the semesters selected as objects
         semesters_asked = request.POST.getlist('semesters[]')
         semesters_objects = [Semester.objects.get(name=s) for s in semesters_asked]
+
         if semesters_asked:
+            # Get all SemesterSummary entries with the corresponding semesters
             data = Semester.objects.none()
             data = SemesterSummary.objects.filter(semester__in=semesters_objects)
             data = data.values('student__sciper',
@@ -266,7 +276,6 @@ def students(request, sciper=""):
                                'faculty_allowance',
                                'total_charged',
                                'total_spent')
-
     return render(
         request,
         'bill2myprint/students.html',
@@ -333,6 +342,9 @@ def status(request):
         }
     )
 
+#def index(request):
+#    context = {}
+#    return render(request, 'bill2myprint/index.html', context)
 
 ##########################
 #

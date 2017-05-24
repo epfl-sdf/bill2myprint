@@ -8,3 +8,5 @@
 sudo ./install_mssql_driver.sh
 ./install_django.sh
 
+sudo systemctl stop mysql
+sudo systemctl disable mysql
