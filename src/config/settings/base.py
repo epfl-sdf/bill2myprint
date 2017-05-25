@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'equitrac',
     'userprofile',
     'django_tequila',
+    'staff',
 ]
 
 MIDDLEWARE = [
@@ -117,8 +118,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
+        'HOST': '127.0.0.1',
         'NAME': 'bill2myprint',
-	'HOST': '127.0.0.1',
         'USER': 'bill2myprint',
         'PASSWORD': get_secret('OUR_DB_PASSWORD'),
     },
@@ -140,7 +141,7 @@ DATABASES = {
     #     'ENGINE': 'sql_server.pyodbc',
     #     'HOST': 'mssql-tst-uat.epfl.ch',
     #     'NAME': 'myPrint_eqcas_stats',
-    #     'USER': 'INTRANET\username_tequila_gaspar',
+    #     'USER': 'INTRANET\username_tequila_gapsar',
     #     'PASSWORD': 'password_tequila',
     #     'PORT': 1433,
     #     'OPTIONS': {
@@ -153,6 +154,19 @@ DATABASES = {
     #     'ENGINE': 'sql_server.pyodbc',
     #     'HOST': 'mssql-tst-uat.epfl.ch',
     #     'NAME': 'myPrint_Accounts',
+    #     'USER': 'INTRANET\username_tequila_gaspar',
+    #     'PASSWORD': 'password_tequila',
+    #     'PORT': 1433,
+    #     'OPTIONS': {
+    #         'driver': 'FreeTDS',
+    #         'host_is_server': True,
+    #         'extra_params': "TDS_VERSION=8.0"
+    #     }
+    # },
+    # 'staff_db': {
+    #     'ENGINE': 'sql_server.pyodbc',
+    #     'HOST': 'mssql-tst-uat.epfl.ch',
+    #     'NAME': 'Staff',
     #     'USER': 'INTRANET\username_tequila_gaspar',
     #     'PASSWORD': 'password_tequila',
     #     'PORT': 1433,
