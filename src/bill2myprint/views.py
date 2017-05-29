@@ -233,6 +233,19 @@ def students(request, sciper=""):
     if transactions:
         cumulated = list(transactions.values('transaction_type').annotate(Sum('amount')))
         transactions = transactions.order_by("-transaction_date")
+        ## Trying to sort the whole transaction set, rather than just the current page
+        ## Need to implement special function ?
+        #attr = request.POST.get('attr')
+        #if attr:
+        #    if request.POST.get('attr') == 'date':
+        #        transactions = transactions.order_by("-transaction_date") if request.POST.get('order') == 'desc' else transactions.order_by("transaction_date")
+        #    elif attr and request.POST.get('attr') == 'semester':
+        #        transactions = transactions.order_by("-semester__name") if request.POST.get('order') == 'desc' else transactions.order_by("semester__name")
+        #    elif attr and request.POST.get('attr') == 'type':
+        #        transactions = transactions.order_by("-transaction_type") if request.POST.get('order') == 'desc' else transactions.order_by("transaction_type")
+        #    elif attr and request.POST.get('attr') == 'amount':
+        #        transactions = transactions.order_by("-amount") if request.POST.get('order') == 'desc' else transactions.order_by("amount")
+
     else:
         cumulated = None
 
