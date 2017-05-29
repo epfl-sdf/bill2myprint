@@ -1,21 +1,16 @@
-import time
 import json
 from collections import defaultdict
 from datetime import datetime
 
-from django.http import HttpResponse
 from django.shortcuts import render
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count
+from django.http import HttpResponse
 from django.views.generic import ListView
+from django.db.models import Count, Sum, Q
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Sum, Q
-# Authentication imports
-from django.contrib.auth.decorators import login_required  # for custom views (functions)
-from django.contrib.auth.mixins import LoginRequiredMixin  # for generic views (classes)
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Custom models
-from uniflow.models import ServiceconsumerT, BudgettransactionsT
+from uniflow.models import BudgettransactionsT
 from bill2myprint.models import *
 
 
@@ -173,6 +168,15 @@ def sections(request, faculty="", section="", semester=""):
 
     number_of_students = len(students)
 
+    paginator = Paginator(students, 50)
+    page = request.GET.get('page')
+    try:
+        students_p = paginator.page(page)
+    except PageNotAnInteger:
+        students_p = paginator.page(1)
+    except EmptyPage:
+        students_p = paginator.page(paginator.num_pages)
+
     return render(
         request,
         'bill2myprint/sections.html',
@@ -185,7 +189,7 @@ def sections(request, faculty="", section="", semester=""):
             'current_section': current_section,
             'current_semester': current_semester,
             'number_of_students': number_of_students,
-            'students': students,
+            'students': students_p,
         }
     )
 
@@ -247,13 +251,27 @@ def students(request, sciper=""):
                 t['spent'] = t['spent'] + cumulus['amount__sum']
         t['credit'] = t['vpsi'] + t['faculty'] + t['added'] + t['spent']
 
+
+    paginator = Paginator(transactions, 50)
+    page = request.GET.get('page')
+    if transactions:
+        try:
+            transactions_p = paginator.page(page)
+        except PageNotAnInteger:
+            transactions_p = paginator.page(1)
+        except EmptyPage:
+            transactions_p = paginator.page(paginator.num_pages)
+    else:
+        transactions_p = None
+
+
     return render(
         request,
         'bill2myprint/students.html',
         {
             'is_students': True,
             'student': student,
-            'transactions': transactions,
+            'transactions': transactions_p,
             'cumulated': t,
         }
     )
@@ -345,9 +363,6 @@ def status(request):
         }
     )
 
-#def index(request):
-#    context = {}
-#    return render(request, 'bill2myprint/index.html', context)
 
 ##########################
 #
@@ -369,65 +384,3 @@ def sciper_list(request):
             extra(select={'student': 'name'})
 
     return HttpResponse(json.dumps(list(students.order_by('student').values('student'))))
-
-
-#class SectionsView(LoginRequiredMixin, ListView):
-#    # Template attributes
-#    template_name = 'bill2myprint/sections.html'
-#    context_object_name = 'section_list'
-#
-#    def get_queryset(self):
-#        # The "S_StudU" part is prevented from being displayed with to the "cut" templatetag
-#        return ServiceconsumerT.objects.filter(name__endswith='S_StudU')
-
-
-#class RallongeFacultaireView(LoginRequiredMixin, ListView):
-#    template_name = 'bill2myprint/rallonge_facultaire.html'
-#    context_object_name = 'rallonge_list'
-#    paginate_by = 20
-#
-#    def get_queryset(self):
-#        # Get the rallonge facultaire in the BudgetTransaction table
-#        return BudgettransactionsT.objects.filter(transactiondata__startswith='Rallonge')
-
-
-class RallongeFacultaire2View(LoginRequiredMixin, ListView):
-    template_name = 'bill2myprint/rallonge_facultaire.html'
-    context_object_name = 'rallonge2_list'
-
-    def get_queryset(self):
-        # Get the rallonge facultaire in the BudgetTransaction table
-        return BudgettransactionsT.objects.filter(transactiondata__startswith='Rallonge').values('amount', 'transactiondata').distinct()
-
-
-#class StudentsView(LoginRequiredMixin, ListView):
-#    template_name = 'bill2myprint/etudiants.html'
-#    context_object_name = 'students_list'
-#    paginate_by = 15
-#
-#    def get_queryset(self):
-#        # Get the students list
-#        students_group_id = ServiceconsumerT.objects.get(name='Etudiant').id
-#        students_cost_center_id = ServiceconsumerT.objects.get(name='ETU').id
-#        return ServiceconsumerT.objects.filter(defaultgroupid=students_group_id, defaultcostcenter=students_cost_center_id)
-
-
-#class StudentDetailView(LoginRequiredMixin, ListView):
-#    template_name = 'bill2myprint/etudiant_detail.html'
-#    context_object_name = 'transactions_list'
-#    paginate_by = 15
-#
-#    def get_queryset(self):
-#        # Get the student's transaction history
-#        student_id = self.kwargs['studid']
-#        return ServiceconsumerT.objects.get(pk=student_id).budgettransactionst_set.all()
-#
-#
-#@login_required
-#def studentTotal(request, studid):
-#    # Output total of student depense
-#    template_name = 'bill2myprint/etudiant_total.html'
-#    student = ServiceconsumerT.objects.get(pk=studid)
-#    total = student.budgettransactionst_set.aggregate(Sum('amount'))['amount__sum']
-#    name = student.name
-#    return render(request, template_name, {'total': total, 'name': name})

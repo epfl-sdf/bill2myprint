@@ -71,6 +71,22 @@
 </div>
 
 <div class="row" style="margin-top: 30px;">
+    <div class="pagination">
+        <span class="step-links">
+            {% if students.has_previous %}
+                <a href="?page={{ students.previous_page_number }}">Précédent</a>
+            {% endif %}
+
+            <span class="current-page">
+                Page {{students.number }} sur {{students.paginator.num_pages }}
+            </span>
+
+            {% if students.has_next %}
+                <a href="?page={{ students.next_page_number }}">Suivant</a>
+            {% endif %}
+        </span>
+    </div>
+
     <div>
         <table data-toggle="table" class="table table-striped table-bordered table-hover">
             <thead>
@@ -98,6 +114,22 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if students.has_previous %}
+                <a href="?page={{ students.previous_page_number }}">Précédent</a>
+            {% endif %}
+
+            <span class="current-page">
+                Page {{students.number }} sur {{students.paginator.num_pages }}
+            </span>
+
+            {% if students.has_next %}
+                <a href="?page={{ students.next_page_number }}">Suivant</a>
+            {% endif %}
+        </span>
     </div>
 </div>
 {% endblock %}
