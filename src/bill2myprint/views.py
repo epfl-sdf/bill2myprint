@@ -69,6 +69,17 @@ def __get_number_of_students(semester, faculty="", section=""):
     return number_of_students.values('student').distinct().count()
 
 
+def __compute_fac_cost_for_student(semester_summary):
+    fac_cost = 0.0
+    diff_vpsi = semester_summary.total_spent + semester_summary.myprint_allowance
+    if diff_vpsi < 0:
+        if abs(diff_vpsi) < semester_summary.faculty_allowance:
+            fac_cost = -round(diff_vpsi, 2)
+        else:
+            fac_cost = round(semester_summary.faculty_allowance, 2)
+    return fac_cost
+
+
 ##########################
 #
 # VIEWS FUNCTIONS
@@ -123,6 +134,8 @@ def faculties(request, faculty="", semester=""):
             dict['added'] = section_data.aggregate(Sum('total_charged'))['total_charged__sum']
             dict['spent'] = section_data.aggregate(Sum('total_spent'))['total_spent__sum']
             dict['amount'] = 0
+            for semester_summary in section_data:
+                dict['amount'] += __compute_fac_cost_for_student(semester_summary)
         sections_data.append(dict)
 
     number_of_students = __get_number_of_students(semester=current_semester, faculty=current_faculty)
