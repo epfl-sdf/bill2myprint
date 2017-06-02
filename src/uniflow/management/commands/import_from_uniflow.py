@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 
 from uniflow.models import ServiceusageT, ServiceconsumerT, GroupmembershipT, Camipro, BudgettransactionsT
 from bill2myprint.models import Student, Semester, Transaction, Section, SemesterSummary
+from staff.models import VPersonDeltaHistory
 
 
 class Command(BaseCommand):
@@ -19,61 +20,50 @@ class Command(BaseCommand):
             default=False,
         )
 
-    def get_section_from_uniflow(self, student_uniflow):
+    def get_section(self, student_uniflow, student, transaction_time):
+        section = None
+        uniflow_section = None
+        section_acronym = ''
         try:
             uniflow_section = student_uniflow.groupmembershipt_user_set.get(group__name__iendswith='S_StudU').group.name
-        except (GroupmembershipT.DoesNotExist, GroupmembershipT.MultipleObjectsReturned):
-            return None
-        if uniflow_section:
             section_acronym = re.search('(.*)S_StudU', uniflow_section).group(1)
-            try:
-                section = Section.objects.get(acronym=section_acronym)
-            except Section.DoesNotExist:
-                return None
+        except (GroupmembershipT.DoesNotExist, GroupmembershipT.MultipleObjectsReturned):
+            section_acronym = VPersonDeltaHistory.get_section_acronym_at_time(student.sciper, transaction_time)
+        try:
+            section = Section.objects.get(acronym=section_acronym)
+        except Section.DoesNotExist:
+            return None
         return section
 
-    def get_student_from_uniflow(self, student_uniflow):
+    def get_student(self, student_uniflow, transaction_time):
         username = student_uniflow.login
         name = student_uniflow.name
         # Try to identify student with link between camipro card and sciper
         # If this link does not exist for this student identify him with his gaspar's username
-        has_camipro = False
         try:
             student_sciper = student_uniflow.payconid.sciper
-            has_camipro = True
         except Camipro.DoesNotExist:
-            pass
-
-        if has_camipro:
-            student = Student.objects.filter(sciper=student_sciper)
-            if student.count() == 0:
-                student = Student.objects.create(sciper=student_sciper, username=username, name=name)
-            else:
-                assert student.count() == 1
-                student = student[0]
-                if student.name != name and name:
-                    student.name=name
-                    student.save()
-                elif student.username != username and username:
-                    student.username=username
-                    student.save()
-        else:
-            try:
-                student = Student.objects.get_or_create(username=username)[0]
-            except Student.MultipleObjectsReturned:
-                return None
-            if student.name != name and name:
-                student.name = name
-                student.save()
+            student_sciper = VPersonDeltaHistory.get_sciper_at_time(username, transaction_time)
+            if student_sciper is None:
+                pattern = re.compile("^\d{6}$")
+                if pattern.match(username):
+                    student_sciper = username
+                    username = VPersonDeltaHistory.get_username_at_time(student_sciper, transaction_time)
+                    name = VPersonDeltaHistory.get_name_at_time(student_sciper, transaction_time)
+                else:
+                    print('ATTENTION: {} {}'.format(username, transaction_time))
+                    return None
+        student, created = Student.objects.get_or_create(sciper=student_sciper)
+        if student.name != name and name:
+            student.name = name
+            student.save()
+        if student.username != username and username:
+            student.username = username
+            student.save()
         return student
 
     def update_semester_summary(self, student, section, semester, transaction_type, amount):
-        summary = SemesterSummary.objects.filter(student=student, section=section, semester=semester)
-        if summary.count() == 0:
-            summary = SemesterSummary(student=student, section=section, semester=semester)
-        else:
-            assert summary.count() == 1
-            summary = summary[0]
+        summary, created = SemesterSummary.objects.get_or_create(student=student, section=section, semester=semester)
         if transaction_type == 'REFUND' or transaction_type == 'PRINT_JOB':
             summary.total_spent -= amount
         elif transaction_type == 'MYPRINT_ALLOWANCE':
@@ -105,8 +95,9 @@ class Command(BaseCommand):
                                                                              Q(transactiondata__icontains='Rallonge') |
                                                                              Q(transactiondata__icontains='Camipro-Web-Load') &
                                                                              Q(transactiontime__gt=date_last_imported))
-        service_usages = service_usages.order_by('serviceconsumer')
-        batch = 10000
+        service_usages = service_usages.order_by('serviceconsumer', 'usagebegin')
+        uniflow_budget_transactions = uniflow_budget_transactions.order_by('entity', 'transactiontime')
+        batch = 5000
         total = service_usages.count()
         next_batch_start = 0
         current_serviceconsumer_id = ''
@@ -124,11 +115,12 @@ class Command(BaseCommand):
                     continue
                 # This is only implemented to limit the number of database query we run
                 if not current_serviceconsumer_id or current_serviceconsumer_id != su.serviceconsumer.id:
+                    current_serviceconsumer_id = ''
+                    student = self.get_student(su.serviceconsumer, su.usagebegin)
+                    section = self.get_section(su.serviceconsumer, student, su.usagebegin)
+                    if not section or student is None:
+                        continue
                     current_serviceconsumer_id = su.serviceconsumer.id
-                    student = self.get_student_from_uniflow(su.serviceconsumer)
-                    section = self.get_section_from_uniflow(su.serviceconsumer)
-                if student is None or section is None:
-                    continue
                 if su.amountpaid == 0:
                         continue
                 elif su.amountpaid < 0:
@@ -147,7 +139,6 @@ class Command(BaseCommand):
                     job_type=su.service.get_service_name())
                 )
                 self.update_semester_summary(student, section, semester, transaction_type, su.amountpaid)
-
             Transaction.objects.bulk_create(to_save)
             next_batch_start = batch_end
 
@@ -164,20 +155,24 @@ class Command(BaseCommand):
                 if bt.entity.defaultgroupid != students_group_id or bt.entity.defaultcostcenter != students_cost_center_id:
                     continue
                 if not current_serviceconsumer_id or current_serviceconsumer_id != bt.entity.id:
+                    current_serviceconsumer_id = ''
+                    student = self.get_student(bt.entity, bt.transactiontime)
+                    section = self.get_section(bt.entity, student, bt.transactiontime)
+                    if not section or student is None:
+                        continue
                     current_serviceconsumer_id = bt.entity.id
-                    student = self.get_student_from_uniflow(bt.entity)
-                    section = self.get_section_from_uniflow(bt.entity)
-                if student is None or section is None:
-                    continue
                 if bt.amount == 0:
                         continue
-                semester = Semester.objects.filter(end_date__gte=bt.transactiontime)[0]
+                semester = None
                 if 'alloc' in bt.transactiondata.lower():
                     transaction_type = 'MYPRINT_ALLOWANCE'
+                    semester = Semester.objects.filter(end_date_official__gte=bt.transactiontime)[0]
                 elif 'rallonge' in bt.transactiondata.lower():
                     transaction_type = 'FACULTY_ALLOWANCE'
+                    semester = Semester.objects.filter(end_date_official__gte=bt.transactiontime)[0]
                 elif 'camipro-web-load' in bt.transactiondata.lower():
                     transaction_type = 'ACCOUNT_CHARGING'
+                    semester = Semester.objects.filter(end_date__gte=bt.transactiontime)[0]
                 else:
                     raise ValueError('Unknown transaction type in uniflow')
                 to_save.append(Transaction(

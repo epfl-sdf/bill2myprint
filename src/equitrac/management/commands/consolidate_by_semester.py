@@ -1,6 +1,6 @@
 import re
 
-from django.db.models import Q
+from django.db.models import Q, Count, Case, F, FloatField, When
 from django.core.management.base import BaseCommand
 
 from equitrac.models import TAllTransactions
@@ -28,7 +28,71 @@ class Command(BaseCommand):
         current_semester = None
         previous_semester = None
         to_save = []
-        to_save_compacted = []
+        for semester in Semester.objects.all().order_by('end_date'):
+            i += 1
+            print('Semester: {}'.format(i))
+            previous_semester = current_semester
+            if not current_semester:
+                current_semester = semester
+                semester_transactions = TAllTransactions.objects.filter(trans_datetime__lte=current_semester.end_date_official)
+            else:
+                current_semester = semester
+                semester_transactions = TAllTransactions.objects.filter(trans_datetime__lte=current_semester.end_date_official,
+                                                                        trans_datetime__gt=previous_semester.end_date_official)
+
+            semester_transactions = semester_transactions.filter(hierarchie2='EPFL ETU').filter(trans_origin='T_STUD_ALLOWANCE')
+            semester_transactions = semester_transactions.exclude(Q(hierarchie3__icontains='audit') |
+                                                                  Q(hierarchie3__icontains='EDOC'))
+            semester_transactions = semester_transactions.values_list('person_sciper',
+                                                                      'hierarchie3',
+                                                                      'trans_datetime',
+                                                                      'trans_amount',
+                                                                      'trans_origin',
+                                                                      'trans_description',
+                                                                      'account_name')
+            semester_transactions = semester_transactions.order_by('person_sciper', 'trans_datetime')
+
+            current_sciper = ''
+            current_section_acronym = ''
+            last_transaction=None
+
+            for st in semester_transactions:
+                st_section_acronym = re.search('EPFL ETU (.*)-.*', st[1]).group(1)
+                if not current_sciper:
+                    current_sciper = st[0]
+                    student = self.update_and_get_student(sciper=current_sciper, username=xstr(st[6]))
+                if not current_section_acronym:
+                    current_section_acronym = st_section_acronym
+                    section = Section.objects.get(acronym=current_section_acronym)
+                if current_sciper != st[0]:
+                    current_sciper = st[0]
+                    current_section_acronym = st_section_acronym
+                    section = Section.objects.get(acronym=current_section_acronym)
+                    student = self.update_and_get_student(sciper=current_sciper, username=xstr(st[6]))
+                elif current_section_acronym != st_section_acronym:
+                    current_section_acronym = st_section_acronym
+                    section = Section.objects.get(acronym=current_section_acronym)
+                if 'Rallonge' in st[5]:
+                    to_save.append(Transaction(transaction_type='FACULTY_ALLOWANCE',
+                                            transaction_date=st[2],
+                                            amount=st[3],
+                                            student=student,
+                                            section=section,
+                                            semester=semester))
+                elif 'Allocation myPrint' in st[5]:
+                    to_save.append(Transaction(transaction_type='MYPRINT_ALLOWANCE',
+                                            transaction_date=st[2],
+                                            amount=st[3],
+                                            student=student,
+                                            section=section,
+                                            semester=semester))
+                else:
+                    raise ValueError('Type de transaction inconnue')
+        Transaction.objects.bulk_create(to_save)
+        to_save = []
+        i = 0
+        current_semester = None
+        previous_semester = None
         for semester in Semester.objects.all().order_by('end_date'):
             i += 1
             print('Semester: {}'.format(i))
@@ -41,7 +105,7 @@ class Command(BaseCommand):
                 semester_transactions = TAllTransactions.objects.filter(trans_datetime__lte=current_semester.end_date,
                                                                         trans_datetime__gt=previous_semester.end_date)
 
-            semester_transactions = semester_transactions.filter(hierarchie2='EPFL ETU')
+            semester_transactions = semester_transactions.filter(hierarchie2='EPFL ETU').exclude(trans_origin='T_STUD_ALLOWANCE')
             semester_transactions = semester_transactions.exclude(Q(hierarchie3__icontains='audit') |
                                                                   Q(hierarchie3__icontains='EDOC'))
             semester_transactions = semester_transactions.values_list('person_sciper',
@@ -51,14 +115,12 @@ class Command(BaseCommand):
                                                                       'trans_origin',
                                                                       'trans_description',
                                                                       'account_name')
-            semester_transactions = semester_transactions.order_by('person_sciper')
+            semester_transactions = semester_transactions.order_by('person_sciper', 'trans_datetime')
 
             current_sciper = ''
             current_section_acronym = ''
             student_total_spent = 0
             student_total_charged = 0
-            student_fac_allowance = 0
-            student_myprint_allowance = 0
             last_transaction=None
             for st in semester_transactions:
                 st_section_acronym = re.search('EPFL ETU (.*)-.*', st[1]).group(1)
@@ -76,20 +138,10 @@ class Command(BaseCommand):
                                             student=student,
                                             section=section,
                                             semester=semester))
-                    to_save_compacted.append(SemesterSummary(student=student,
-                                                             semester=semester,
-                                                             total_charged=student_total_charged,
-                                                             total_spent=student_total_spent,
-                                                             myprint_allowance=student_myprint_allowance,
-                                                             faculty_allowance=student_fac_allowance,
-                                                             section=section)
-                                             )
                     current_sciper = st[0]
                     current_section_acronym = st_section_acronym
                     student_total_spent = 0
                     student_total_charged = 0
-                    student_fac_allowance = 0
-                    student_myprint_allowance = 0
                 elif current_section_acronym != st_section_acronym:
                     section = Section.objects.get(acronym=current_section_acronym)
                     student = self.update_and_get_student(sciper=current_sciper, username=xstr(last_transaction[6]))
@@ -100,44 +152,13 @@ class Command(BaseCommand):
                                             student=student,
                                             section=section,
                                             semester=semester))
-                    to_save_compacted.append(SemesterSummary(student=student,
-                                                             semester=semester,
-                                                             total_charged=student_total_charged,
-                                                             total_spent=student_total_spent,
-                                                             myprint_allowance=student_myprint_allowance,
-                                                             faculty_allowance=student_fac_allowance,
-                                                             section=section)
-                                             )
                     current_section_acronym = st_section_acronym
                     student_total_spent = 0
                     student_total_charged = 0
-                    student_fac_allowance = 0
-                    student_myprint_allowance = 0
 
-                if st[4] == 'T_STUD_ALLOWANCE':
-                    student = self.update_and_get_student(sciper=current_sciper, username=xstr(st[6]))
-                    section = Section.objects.get(acronym=current_section_acronym)
-                    if 'Rallonge' in st[5]:
-                        to_save.append(Transaction(transaction_type='FACULTY_ALLOWANCE',
-                                                transaction_date=st[2],
-                                                amount=st[3],
-                                                student=student,
-                                                section=section,
-                                                semester=semester))
-                        student_fac_allowance += st[3]
-                    elif 'Allocation myPrint' in st[5]:
-                        to_save.append(Transaction(transaction_type='MYPRINT_ALLOWANCE',
-                                                transaction_date=st[2],
-                                                amount=st[3],
-                                                student=student,
-                                                section=section,
-                                                semester=semester))
-                        student_myprint_allowance += st[3]
-                    else:
-                        raise ValueError('Type de transaction inconnue')
                 elif st[4] == 'T_ACCOUNT_CHARGING':
-                    student = self.update_and_get_student(sciper=current_sciper, username=xstr(st[6]))
                     section = Section.objects.get(acronym=current_section_acronym)
+                    student = self.update_and_get_student(sciper=current_sciper, username=xstr(st[6]))
                     to_save.append(Transaction(transaction_type='ACCOUNT_CHARGING',
                                             transaction_date=st[2],
                                             amount=st[3],
@@ -151,5 +172,46 @@ class Command(BaseCommand):
             print('Saving transactions')
             Transaction.objects.bulk_create(to_save)
             to_save = []
-            SemesterSummary.objects.bulk_create(to_save_compacted)
-            to_save_compacted = []
+
+        doubles = Transaction.objects.filter(transaction_type='MYPRINT_ALLOWANCE')
+        doubles = doubles.values('semester', 'section', 'student', 'amount', 'transaction_date').annotate(total=Count('id'))
+        doubles = doubles.order_by().filter(total__gt=1)
+        for d in doubles:
+            res = Transaction.objects.filter(semester__id=d['semester'],
+                                             section__id=d['section'],
+                                             student__id=d['student'],
+                                             amount=d['amount'],
+                                             transaction_date=d['transaction_date'])
+            res[0].delete()
+
+        semester_summaries = {}
+        i = 0
+        for transaction in Transaction.objects.all():
+            i = i + 1
+            if i % 10000 == 0:
+                print(i)
+            semester = transaction.semester
+            student = transaction.student
+            section = transaction.section
+            if transaction.semester not in semester_summaries:
+                semester_summaries[semester] = {}
+            if transaction.section not in semester_summaries[semester]:
+                semester_summaries[semester][section] = {}
+            if transaction.student not in semester_summaries[semester][section]:
+                semester_summaries[semester][section][student] = SemesterSummary(semester=semester, section=section, student=student)
+
+            if transaction.transaction_type == 'MYPRINT_ALLOWANCE':
+                semester_summaries[semester][section][student].myprint_allowance += transaction.amount
+            elif transaction.transaction_type == 'ACCOUNT_CHARGING':
+                semester_summaries[semester][section][student].total_charged += transaction.amount
+            elif transaction.transaction_type == 'FACULTY_ALLOWANCE':
+                semester_summaries[semester][section][student].faculty_allowance += transaction.amount
+            elif transaction.transaction_type == 'PRINT_JOB' or transaction.transaction_type == 'REFUND':
+                semester_summaries[semester][section][student].total_spent += transaction.amount
+
+        semester_summaries_arr = []
+        for semester, dict1 in semester_summaries.items():
+            for section, dict2 in dict1.items():
+                for student, value in dict2.items():
+                    semester_summaries_arr.append(value)
+        SemesterSummary.objects.bulk_create(semester_summaries_arr)
