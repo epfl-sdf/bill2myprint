@@ -1,0 +1,71 @@
+{% extends "bill2myprint/base.html" %}
+{% load static %}
+
+
+{% block template_main %}
+<h1>Facturation</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Dernière mise à jour: </h4>
+    </div>
+    <div class="col-md-8" style="padding-top: 10px;">
+        <h4 style="display: inline">{{ last_update.update_date }}</h4>
+        {% if last_update.status == 'SUCCESS' %}
+        <img style="margin-top:-5px" src="{% static "img/status_success.png" %}">
+        {% else %}
+        <img style="margin-top:-5px" src="{% static "img/status_failed.png" %}">
+        {% endif %}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-4">
+        <h4>Semestre: </h4>
+    </div>
+    <div class="col-md-8">
+        <form id="homepage_form" action="{% url 'homepage' %}" method="POST">{% csrf_token %}
+            <input type="hidden" id="semester" name="semester" value="{{ current_semester }}"/>
+            <div id="homepage_semester" class="btn-group">
+                <label class="dropdown-toggle" data-toggle="dropdown">
+                    {{ current_semester }}  <span class="caret"></span>
+                </label>
+                <ul class="dropdown-menu scrollable-menu" role="menu">
+                    {% for semester in semesters %}
+                    <li><label>{{ semester }}</label></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Nombre d'étudiants: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ number_of_students }}</h4>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 30px;">
+    <div>
+        <table data-toggle="table" class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th data-field="faculty" data-sortable="true">Faculté</th>
+                    <th data-field="bill" data-sortable="true">Facturation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fac in faculties %}
+                <tr>
+                    <td><a href="{% url 'faculties' faculty=fac.section__faculty__name semester=current_semester %}">{{ fac.section__faculty__name }}</a></td>
+                    <td class="cell-for-numbers">{{ fac.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

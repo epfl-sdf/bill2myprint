@@ -13,6 +13,8 @@ class MyPrintRouter(object):
             return 'myprint'
         elif model._meta.app_label == 'equitrac':
             return 'equitrac_transactions'
+        elif model._meta.app_label == 'staff':
+            return 'staff_db'
         return 'default'
 
     def db_for_write(self, model, **hints):
@@ -34,6 +36,9 @@ class MyPrintRouter(object):
         elif obj1._meta.app_label == 'equitrac' and \
                 obj2._meta.app_label == 'equitrac':
             return True
+        elif obj1._meta.app_label == 'staff' and \
+                obj2._meta.app_label == 'staff':
+            return True
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
@@ -42,6 +47,7 @@ class MyPrintRouter(object):
         as th DB already exists.
         """
         if app_label == 'uniflow' or db == 'myprint' or \
-                app_label == 'equitrac' or db == 'equitrac_transactions':
+                app_label == 'equitrac' or db == 'equitrac_transactions' or \
+                app_label == 'staff' or db == 'staff_db':
             return False
         return None
