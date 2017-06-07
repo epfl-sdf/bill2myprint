@@ -86,9 +86,9 @@ def compute(request):
     sections = Section.objects.all()
     students = Student.objects.all()
 
-    dict = defaultdict(float)
     for section in sections:
         for student in students:
+            dict = defaultdict(float)
             for semester in semesters:
                 semesters_data = SemesterSummary.objects.\
                     filter(semester__name=semester).\
