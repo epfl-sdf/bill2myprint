@@ -1,10 +1,11 @@
 from django.conf.urls import url
 from bill2myprint.views import homepage, faculties, sections, students, sciper_list, \
-    faculty_extension, status
+    faculty_extension, status, compute
 
 
 urlpatterns = [
     url(r'^$', homepage, name='homepage'),
+    url(r'^compute/$', compute, name='compute'),
     url(r'^faculties/$', faculties, name='default_faculties'),
     url(r'^faculties/(?P<faculty>[\w\& ]+)/(?P<semester>[\w\-& ]+)/$', faculties, name='faculties'),
     url(r'^sections/$', sections, name='default_sections'),

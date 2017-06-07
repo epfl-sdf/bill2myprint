@@ -3,7 +3,8 @@ from collections import defaultdict
 from datetime import datetime
 
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import reverse
 from django.views.generic import ListView
 from django.db.models import Count, Sum, Q
 from django.core.exceptions import ObjectDoesNotExist
@@ -69,15 +70,40 @@ def __get_number_of_students(semester, faculty="", section=""):
     return number_of_students.values('student').distinct().count()
 
 
-def __compute_fac_cost_for_student(semester_summary):
-    fac_cost = 0.0
-    diff_vpsi = semester_summary.total_spent + semester_summary.myprint_allowance
-    if diff_vpsi < 0:
-        if abs(diff_vpsi) < semester_summary.faculty_allowance:
-            fac_cost = -round(diff_vpsi, 2)
-        else:
-            fac_cost = round(semester_summary.faculty_allowance, 2)
-    return fac_cost
+def __compute(dict):
+    return min(0, dict['vpsi'] + dict['added'] + dict['spent'] - dict['amount'])
+
+
+##########################
+#
+# FUNCTIONS FROM VIEWS
+#
+##########################
+
+def compute(request):
+    # Semesters must be ordered to compute facturation historically
+    semesters = __get_semesters()
+    sections = Section.objects.all()
+    students = Student.objects.all()
+
+    dict = defaultdict(float)
+    for section in sections:
+        for student in students:
+            for semester in semesters:
+                semesters_data = SemesterSummary.objects.\
+                    filter(semester__name=semester).\
+                    filter(section=section).\
+                    filter(student=student)
+                if semesters_data:
+                    dict['vpsi'] += semesters_data[0].myprint_allowance
+                    dict['faculty'] += semesters_data[0].faculty_allowance
+                    dict['added'] += semesters_data[0].total_charged
+                    dict['spent'] += semesters_data[0].total_spent
+                    semesters_data[0].facturation_faculty = __compute(dict)
+                    semesters_data[0].save()
+                    dict['amount'] += semesters_data[0].facturation_faculty
+
+    return HttpResponseRedirect(reverse('homepage'))
 
 
 ##########################
@@ -94,7 +120,7 @@ def homepage(request):
         filter(semester__name=current_semester).\
         order_by("section__faculty__name").\
         values('section__faculty__name').\
-        annotate(amount=Sum('total_spent'))
+        annotate(amount=Sum('facturation_faculty'))
 
     number_of_students = __get_number_of_students(semester=current_semester)
 
@@ -133,9 +159,7 @@ def faculties(request, faculty="", semester=""):
             dict['faculty'] = section_data.aggregate(Sum('faculty_allowance'))['faculty_allowance__sum']
             dict['added'] = section_data.aggregate(Sum('total_charged'))['total_charged__sum']
             dict['spent'] = section_data.aggregate(Sum('total_spent'))['total_spent__sum']
-            dict['amount'] = 0
-            for semester_summary in section_data:
-                dict['amount'] += __compute_fac_cost_for_student(semester_summary)
+            dict['amount'] = section_data.aggregate(Sum('facturation_faculty'))['facturation_faculty__sum']
         sections_data.append(dict)
 
     number_of_students = __get_number_of_students(semester=current_semester, faculty=current_faculty)
@@ -277,7 +301,6 @@ def students(request, sciper=""):
                 t['spent'] = t['spent'] + cumulus['amount__sum']
         t['credit'] = t['vpsi'] + t['faculty'] + t['added'] + t['spent']
 
-
     paginator = Paginator(transactions, 50)
     page = request.GET.get('page')
     if transactions:
@@ -290,7 +313,6 @@ def students(request, sciper=""):
     else:
         transactions_p = None
 
-
     return render(
         request,
         'bill2myprint/students.html',
@@ -301,35 +323,6 @@ def students(request, sciper=""):
             'cumulated': t,
         }
     )
-
-
-    """
-    data = ()
-    if request.POST:
-        # Get all the semesters selected as objects
-        semesters_asked = request.POST.getlist('semesters[]')
-        semesters_objects = [Semester.objects.get(name=s) for s in semesters_asked]
-
-        if semesters_asked:
-            # Get all SemesterSummary entries with the corresponding semesters
-            data = Semester.objects.none()
-            data = SemesterSummary.objects.filter(semester__in=semesters_objects)
-            data = data.values('student__sciper',
-                               'semester__name',
-                               'myprint_allowance',
-                               'faculty_allowance',
-                               'total_charged',
-                               'total_spent')
-    return render(
-        request,
-        'bill2myprint/students.html',
-        {
-            'is_students': True,
-            'semesters':  Semester.objects.values_list('name', flat=True),
-            'students': data,
-        }
-    )
-    """
 
 
 def faculty_extension(request):
