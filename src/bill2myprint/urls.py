@@ -1,3 +1,7 @@
+"""
+    (c) All rights reserved. ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, Switzerland, VPSI, 2017
+"""
+
 from django.conf.urls import url
 from bill2myprint.views import homepage, faculties, sections, students, sciper_list, \
     faculty_extension, status, compute, compute_all
