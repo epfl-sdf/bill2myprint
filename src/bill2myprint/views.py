@@ -84,15 +84,17 @@ def compute(request):
     # Semesters must be ordered to compute facturation historically
     semesters = __get_semesters()
     sections = Section.objects.all()
+    students = Student.objects.all()
 
     dict = defaultdict(float)
     for section in sections:
-        for semester in semesters:
-            semesters_data_all = SemesterSummary.objects.\
-                filter(semester__name=semester).\
-                filter(section=section)
-            if semesters_data_all:
-                for semesters_data in semesters_data_all:
+        for student in students:
+            for semester in semesters:
+                semesters_data = SemesterSummary.objects.\
+                    filter(semester__name=semester).\
+                    filter(section=section).\
+                    filter(student=student)
+                if semesters_data:
                     dict['vpsi'] += semesters_data[0].myprint_allowance
                     dict['faculty'] += semesters_data[0].faculty_allowance
                     dict['added'] += semesters_data[0].total_charged
