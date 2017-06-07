@@ -1,4 +1,5 @@
 {% extends "bill2myprint/base.html" %}
+{% load format_number %}
 
 
 {% block template_main %}
@@ -64,10 +65,10 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="cell-for-numbers">{{ cumulated.vpsi|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ cumulated.faculty|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ cumulated.added|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ cumulated.spent|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.vpsi|format_number }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.faculty|format_number }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.added|format_number }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.spent|format_number }}</td>
                     <td class="cell-for-numbers">{{ cumulated.credit|floatformat:2 }}</td>
                 </tr>
             </tbody>
@@ -139,6 +140,4 @@
         </span>
     </div>
 </div>
-
-
 {% endblock %}
