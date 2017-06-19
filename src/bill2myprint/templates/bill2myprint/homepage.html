@@ -58,10 +58,10 @@
                 </tr>
             </thead>
             <tbody>
-                {% for fac in faculties %}
+                {% for key, value in faculties.items %}
                 <tr>
-                    <td><a href="{% url 'faculties' faculty=fac.section__faculty__name semester=current_semester %}">{{ fac.section__faculty__name }}</a></td>
-                    <td class="cell-for-numbers">{{ fac.amount|format_number }}</td>
+                    <td><a href="{% url 'faculties' faculty=key semester=current_semester %}">{{ key }}</a></td>
+                    <td class="cell-for-numbers">{{ value|format_number }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

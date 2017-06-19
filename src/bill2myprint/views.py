@@ -3,21 +3,20 @@
 """
 
 import json
-from collections import defaultdict
+import ast
+from collections import defaultdict, OrderedDict
 from datetime import datetime
 
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from django.views.generic import ListView
-from django.db.models import Count, Sum, Q
+from django.db.models import Sum, Q
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Custom models
 from uniflow.models import BudgettransactionsT
-from bill2myprint.models import *
-
+from bill2myprint.models import Section, Semester, SemesterSummary, Student, Transaction, UpdateStatus
 
 
 ##########################
@@ -74,8 +73,40 @@ def __get_number_of_students(semester, faculty="", section=""):
     return number_of_students.values('student').distinct().count()
 
 
+def __get_floored_faculties_allowance(floors, amount, charges):
+    result = defaultdict(float)
+    prev_floor = 0
+    for floor in floors:
+        if prev_floor <= amount <= floor[1]:
+            new_amount = min(floor[1], amount + charges)
+            if new_amount != amount:
+                result[floor[0]] += new_amount - amount
+            charges = max(0, amount + charges - floor[1])
+            amount = new_amount
+        prev_floor = floor[1]
+    return result
+
+
 def __compute(dict):
     return min(0, dict['vpsi'] + dict['added'] + dict['spent'] - dict['amount'])
+
+
+def __compute_bill(semester, faculty, section=""):
+
+    billing_faculty = SemesterSummary.objects. \
+        filter(semester__name=semester). \
+        filter(facturation_faculty__contains=faculty)
+
+    if section:
+        billing_faculty = billing_faculty.filter(section__acronym=section)
+
+    billing_faculty = billing_faculty.values_list('facturation_faculty', flat=True)
+
+    sum_bill = 0.0
+    for bill in billing_faculty:
+        bill_dict = ast.literal_eval(bill)
+        sum_bill += bill_dict[faculty]
+    return sum_bill
 
 
 ##########################
@@ -84,54 +115,51 @@ def __compute(dict):
 #
 ##########################
 
-def compute_all(request):
+
+def compute(request, semester=""):
     # Semesters must be ordered to compute facturation historically
     semesters = __get_semesters()
-    sections = Section.objects.all()
-    students = Student.objects.all()
 
-    for section in sections:
-        for student in students:
-            dict = defaultdict(float)
-            for semester in semesters:
-                semesters_data = SemesterSummary.objects.\
-                    filter(semester__name=semester).\
-                    filter(section=section).\
-                    filter(student=student)
-                if semesters_data:
-                    dict['vpsi'] += semesters_data[0].myprint_allowance
-                    dict['faculty'] += semesters_data[0].faculty_allowance
-                    dict['added'] += semesters_data[0].total_charged
-                    dict['spent'] += semesters_data[0].total_spent
-                    semesters_data[0].facturation_faculty = __compute(dict)
-                    semesters_data[0].save()
-                    dict['amount'] += semesters_data[0].facturation_faculty
+    if semester:
+        students = Student.objects.filter(semestersummary__semester__name=semester).filter(sciper=192630)
+    else:
+        students = Student.objects.all().filter(sciper=192630)
 
-    return HttpResponseRedirect(reverse('homepage'))
+    for student in students:
+        comp_dict = defaultdict(float)
+        floored_faculty_allowance = []
+        for t_semester in semesters:
+            semesters_datas = SemesterSummary.objects. \
+                filter(semester__name=t_semester). \
+                filter(student=student). \
+                order_by("-myprint_allowance", "-faculty_allowance")
+            for semesters_data in semesters_datas:
+                comp_dict['vpsi'] += semesters_data.myprint_allowance
+                comp_dict['faculty'] += semesters_data.faculty_allowance
+                comp_dict['added'] += semesters_data.total_charged
+                comp_dict['spent'] += semesters_data.total_spent
 
+                total_billing_faculties = __compute(comp_dict)
 
-def compute(request, semester):
-    # Semesters must be ordered to compute facturation historically
-    semesters = __get_semesters()
-    sections = Section.objects.all()
-    students = Student.objects.filter(semestersummary__semester__name=semester)
+                floored_faculty_allowance.append(
+                    [Section.objects.get(id=semesters_data.section_id).faculty.name, comp_dict['faculty']]
+                )
 
-    for section in sections:
-        for student in students:
-            dict = defaultdict(float)
-            for semester in semesters:
-                semesters_data = SemesterSummary.objects. \
-                    filter(semester__name=semester). \
-                    filter(section=section). \
-                    filter(student=student)
-                if semesters_data:
-                    dict['vpsi'] += semesters_data[0].myprint_allowance
-                    dict['faculty'] += semesters_data[0].faculty_allowance
-                    dict['added'] += semesters_data[0].total_charged
-                    dict['spent'] += semesters_data[0].total_spent
-                    semesters_data[0].facturation_faculty = __compute(dict)
-                    semesters_data[0].save()
-                    dict['amount'] += semesters_data[0].facturation_faculty
+                faculties_billing = __get_floored_faculties_allowance(
+                    floored_faculty_allowance,
+                    -comp_dict['amount'],
+                    -total_billing_faculties
+                )
+
+                if not semester or t_semester == semester:
+                    semesters_data.facturation_faculty = repr(dict(faculties_billing))
+                    semesters_data.save()
+
+                comp_dict['facturation_faculty'] = -sum(faculties_billing.values())
+                comp_dict['amount'] += comp_dict['facturation_faculty']
+
+            if semester and t_semester == semester:
+                break
 
     return HttpResponseRedirect(reverse('homepage'))
 
@@ -145,12 +173,11 @@ def compute(request, semester):
 def homepage(request):
     semesters = __get_semesters()
     current_semester = __get_current_semester(request.POST)
+    faculties = __get_faculties()
 
-    faculties = SemesterSummary.objects.\
-        filter(semester__name=current_semester).\
-        order_by("section__faculty__name").\
-        values('section__faculty__name').\
-        annotate(amount=Sum('facturation_faculty'))
+    billing = dict()
+    for faculty in faculties:
+        billing[faculty] = __compute_bill(semester=current_semester, faculty=faculty)
 
     number_of_students = __get_number_of_students(semester=current_semester)
 
@@ -163,7 +190,7 @@ def homepage(request):
             'is_homepage': True,
             'current_semester': current_semester,
             'semesters': semesters,
-            'faculties': faculties,
+            'faculties': OrderedDict(sorted(billing.items())),
             'last_update': last_update,
             'number_of_students': number_of_students,
         }
@@ -189,7 +216,7 @@ def faculties(request, faculty="", semester=""):
             dict['faculty'] = section_data.aggregate(Sum('faculty_allowance'))['faculty_allowance__sum']
             dict['added'] = section_data.aggregate(Sum('total_charged'))['total_charged__sum']
             dict['spent'] = section_data.aggregate(Sum('total_spent'))['total_spent__sum']
-            dict['amount'] = section_data.aggregate(Sum('facturation_faculty'))['facturation_faculty__sum']
+            dict['amount'] = __compute_bill(semester=current_semester, faculty=current_faculty, section=section)
         sections_data.append(dict)
 
     number_of_students = __get_number_of_students(semester=current_semester, faculty=current_faculty)
@@ -300,19 +327,6 @@ def students(request, sciper=""):
     if transactions:
         cumulated = list(transactions.values('transaction_type').annotate(Sum('amount')))
         transactions = transactions.order_by("-transaction_date")
-        ## Trying to sort the whole transaction set, rather than just the current page
-        ## Need to implement special function ?
-        #attr = request.POST.get('attr')
-        #if attr:
-        #    if request.POST.get('attr') == 'date':
-        #        transactions = transactions.order_by("-transaction_date") if request.POST.get('order') == 'desc' else transactions.order_by("transaction_date")
-        #    elif attr and request.POST.get('attr') == 'semester':
-        #        transactions = transactions.order_by("-semester__name") if request.POST.get('order') == 'desc' else transactions.order_by("semester__name")
-        #    elif attr and request.POST.get('attr') == 'type':
-        #        transactions = transactions.order_by("-transaction_type") if request.POST.get('order') == 'desc' else transactions.order_by("transaction_type")
-        #    elif attr and request.POST.get('attr') == 'amount':
-        #        transactions = transactions.order_by("-amount") if request.POST.get('order') == 'desc' else transactions.order_by("amount")
-
     else:
         cumulated = None
 
@@ -409,6 +423,72 @@ def status(request):
         {
             'is_miscellaneous': True,
             'status_table': status_table,
+        }
+    )
+
+
+def student_facturation(request):
+
+    if "student" in request.POST:
+        sciper = request.POST['student']
+        student = Student.objects.get(sciper=sciper)
+        semesters = __get_semesters()
+
+        transactions = []
+        comp_dict = defaultdict(float)
+        floored_faculty_allowance = []
+        for semester in semesters:
+            semesters_datas = SemesterSummary.objects. \
+                filter(semester__name=semester). \
+                filter(student=student). \
+                order_by("-myprint_allowance", "-faculty_allowance"). \
+                values()
+            for semesters_data in semesters_datas:
+                comp_dict['vpsi'] += semesters_data['myprint_allowance']
+                comp_dict['faculty'] += semesters_data['faculty_allowance']
+                comp_dict['added'] += semesters_data['total_charged']
+                comp_dict['spent'] += semesters_data['total_spent']
+                comp_dict['facturation_faculty'] = __compute(comp_dict)
+
+                trans_dict = dict()
+                trans_dict['semester'] = Semester.objects.get(id=semesters_data['semester_id']).name
+                trans_dict['faculty_name'] = Section.objects.get(id=semesters_data['section_id']).faculty.name
+
+                floored_faculty_allowance.append([trans_dict['faculty_name'], comp_dict['faculty']])
+
+                facs_facturation = __get_floored_faculties_allowance(
+                    floored_faculty_allowance,
+                    -comp_dict['amount'],
+                    -comp_dict['facturation_faculty']
+                )
+
+                comp_dict['facturation_faculty'] = -sum(facs_facturation.values())
+                comp_dict['amount'] += comp_dict['facturation_faculty']
+
+                trans_dict['facs_facturation'] = dict(facs_facturation)
+                trans_dict['vpsi'] = semesters_data['myprint_allowance']
+                trans_dict['faculty'] = semesters_data['faculty_allowance']
+                trans_dict['added'] = semesters_data['total_charged']
+                trans_dict['spent'] = semesters_data['total_spent']
+                trans_dict['cum_vpsi'] = comp_dict['vpsi']
+                trans_dict['cum_faculty'] = comp_dict['faculty']
+                trans_dict['cum_added'] = comp_dict['added']
+                trans_dict['cum_spent'] = comp_dict['spent']
+                trans_dict['cum_amount'] = comp_dict['amount']
+                trans_dict['facturation'] = comp_dict['facturation_faculty']
+                transactions.append(trans_dict)
+
+    else:
+        student = None
+        transactions = []
+
+    return render(
+        request,
+        'bill2myprint/student_facturation.html',
+        {
+            'is_miscellaneous': True,
+            'student': student,
+            'transactions': transactions,
         }
     )
 

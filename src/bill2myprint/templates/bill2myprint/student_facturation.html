@@ -1,0 +1,104 @@
+{% extends "bill2myprint/base.html" %}
+{% load format_number %}
+
+
+{% block template_main %}
+<h1>Facturation étudiant</h1>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <form id="student_form" action="{% url 'student_facturation' %}" method="POST">{% csrf_token %}
+            <div class="row">
+                <div class="col-md-2">
+                    <h4>Rechercher: </h4>
+                </div>
+                <div class="col-md-8">
+                    <input type="text" name="student" placeholder="Numéro sciper">
+                </div>
+                <div class="col-md-2">
+                    <input type="submit" class="btn btn-info" value="Rechercher">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<h2>Données personnelles</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Nom: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ student.name }}</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Username: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ student.username }}</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Sciper: </h4>
+    </div>
+    <div class="col-md-8">
+        <h4>{{ student.sciper }}</h4>
+    </div>
+</div>
+
+<h2>Détails</h2>
+
+<div class="row" style="margin-top: 30px;">
+    <div>
+        <table data-toggle="table" class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th rowspan=2 data-field="semester" data-sortable="false">Semestre</th>
+                    <th rowspan=2 data-field="section" data-sortable="false">Faculté</th>
+                    <th colspan=4 data-field="simple" data-sortable="false">Simple</th>
+                    <th colspan=4 data-field="cumulated" data-sortable="false">Cumulé</th>
+                    <th colspan=3 data-field="cum_amount" data-sortable="false">Facturation</th>
+                </tr>
+                <tr>
+                    <th data-field="vpsi" data-sortable="false">Crédit VPSI</th>
+                    <th data-field="faculty" data-sortable="false">Crédit Faculté</th>
+                    <th data-field="added" data-sortable="false">Crédit Étudiant</th>
+                    <th data-field="spent" data-sortable="false">Dépense étudiant</th>
+                    <th data-field="cum_vpsi" data-sortable="false">Crédit VPSI</th>
+                    <th data-field="cum_faculty" data-sortable="false">Crédit Faculté</th>
+                    <th data-field="cum_added" data-sortable="false">Crédit Étudiant</th>
+                    <th data-field="cum_spent" data-sortable="false">Dépense étudiant</th>
+                    <th data-field="facturation" data-sortable="false">Simple</th>
+                    <th data-field="cum_amount" data-sortable="false">Cumulé</th>
+                    <th data-field="computed" data-sortable="false">Calculé</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.semester }}</td>
+                    <td>{{ transaction.faculty_name }}</td>
+                    <td class="cell-for-numbers">{{ transaction.vpsi|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.faculty|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.added|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.spent|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_vpsi|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_faculty|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_added|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_spent|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.facturation|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_amount|floatformat:2 }}</td>
+                    <td>{{ transaction.facs_facturation }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
