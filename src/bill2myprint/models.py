@@ -80,7 +80,7 @@ class SemesterSummary(models.Model):
     myprint_allowance = models.FloatField(default=0)
     faculty_allowance = models.FloatField(default=0)
     section = models.ForeignKey('Section')
-    facturation_faculty = models.FloatField(default=0)
+    facturation_faculty = models.TextField(default='')
 
     class Meta:
         unique_together = ('student', 'semester', 'section')
