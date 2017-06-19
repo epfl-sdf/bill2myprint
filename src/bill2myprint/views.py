@@ -120,10 +120,11 @@ def compute(request, semester=""):
     # Semesters must be ordered to compute facturation historically
     semesters = __get_semesters()
 
+    students = Student.objects.all()
+
     if semester:
-        students = Student.objects.filter(semestersummary__semester__name=semester).filter(sciper=192630)
-    else:
-        students = Student.objects.all().filter(sciper=192630)
+        students = students.filter(semestersummary__semester__name=semester)
+
 
     for student in students:
         comp_dict = defaultdict(float)
