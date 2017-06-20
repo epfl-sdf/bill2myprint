@@ -95,12 +95,12 @@ def __compute_bill(semester, faculty, section=""):
 
     billing_faculty = SemesterSummary.objects. \
         filter(semester__name=semester). \
-        filter(facturation_faculty__contains=faculty)
+        filter(billing_faculty__contains=faculty)
 
     if section:
         billing_faculty = billing_faculty.filter(section__acronym=section)
 
-    billing_faculty = billing_faculty.values_list('facturation_faculty', flat=True)
+    billing_faculty = billing_faculty.values_list('billing_faculty', flat=True)
 
     sum_bill = 0.0
     for bill in billing_faculty:
@@ -117,14 +117,13 @@ def __compute_bill(semester, faculty, section=""):
 
 
 def compute(request, semester=""):
-    # Semesters must be ordered to compute facturation historically
+    # Semesters must be ordered to compute billing historically
     semesters = __get_semesters()
 
     students = Student.objects.all()
 
     if semester:
         students = students.filter(semestersummary__semester__name=semester)
-
 
     for student in students:
         comp_dict = defaultdict(float)
@@ -153,11 +152,11 @@ def compute(request, semester=""):
                 )
 
                 if not semester or t_semester == semester:
-                    semesters_data.facturation_faculty = repr(dict(faculties_billing))
+                    semesters_data.billing_faculty = repr(dict(faculties_billing))
                     semesters_data.save()
 
-                comp_dict['facturation_faculty'] = -sum(faculties_billing.values())
-                comp_dict['amount'] += comp_dict['facturation_faculty']
+                comp_dict['billing_faculty'] = -sum(faculties_billing.values())
+                comp_dict['amount'] += comp_dict['billing_faculty']
 
             if semester and t_semester == semester:
                 break
@@ -428,7 +427,7 @@ def status(request):
     )
 
 
-def student_facturation(request):
+def student_billing(request):
 
     if "student" in request.POST:
         sciper = request.POST['student']
@@ -449,7 +448,7 @@ def student_facturation(request):
                 comp_dict['faculty'] += semesters_data['faculty_allowance']
                 comp_dict['added'] += semesters_data['total_charged']
                 comp_dict['spent'] += semesters_data['total_spent']
-                comp_dict['facturation_faculty'] = __compute(comp_dict)
+                comp_dict['billing_faculty'] = __compute(comp_dict)
 
                 trans_dict = dict()
                 trans_dict['semester'] = Semester.objects.get(id=semesters_data['semester_id']).name
@@ -457,16 +456,16 @@ def student_facturation(request):
 
                 floored_faculty_allowance.append([trans_dict['faculty_name'], comp_dict['faculty']])
 
-                facs_facturation = __get_floored_faculties_allowance(
+                facs_billing = __get_floored_faculties_allowance(
                     floored_faculty_allowance,
                     -comp_dict['amount'],
-                    -comp_dict['facturation_faculty']
+                    -comp_dict['billing_faculty']
                 )
 
-                comp_dict['facturation_faculty'] = -sum(facs_facturation.values())
-                comp_dict['amount'] += comp_dict['facturation_faculty']
+                comp_dict['billing_faculty'] = -sum(facs_billing.values())
+                comp_dict['amount'] += comp_dict['billing_faculty']
 
-                trans_dict['facs_facturation'] = dict(facs_facturation)
+                trans_dict['facs_billing'] = dict(facs_billing)
                 trans_dict['vpsi'] = semesters_data['myprint_allowance']
                 trans_dict['faculty'] = semesters_data['faculty_allowance']
                 trans_dict['added'] = semesters_data['total_charged']
@@ -476,7 +475,7 @@ def student_facturation(request):
                 trans_dict['cum_added'] = comp_dict['added']
                 trans_dict['cum_spent'] = comp_dict['spent']
                 trans_dict['cum_amount'] = comp_dict['amount']
-                trans_dict['facturation'] = comp_dict['facturation_faculty']
+                trans_dict['billing'] = comp_dict['billing_faculty']
                 transactions.append(trans_dict)
 
     else:
@@ -485,7 +484,7 @@ def student_facturation(request):
 
     return render(
         request,
-        'bill2myprint/student_facturation.html',
+        'bill2myprint/student_billing.html',
         {
             'is_miscellaneous': True,
             'student': student,

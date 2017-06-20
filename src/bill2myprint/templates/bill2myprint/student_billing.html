@@ -7,7 +7,7 @@
 
 <div class="panel panel-default">
     <div class="panel-body">
-        <form id="student_form" action="{% url 'student_facturation' %}" method="POST">{% csrf_token %}
+        <form id="student_form" action="{% url 'student_billing' %}" method="POST">{% csrf_token %}
             <div class="row">
                 <div class="col-md-2">
                     <h4>Rechercher: </h4>
@@ -74,7 +74,7 @@
                     <th data-field="cum_faculty" data-sortable="false">Crédit Faculté</th>
                     <th data-field="cum_added" data-sortable="false">Crédit Étudiant</th>
                     <th data-field="cum_spent" data-sortable="false">Dépense étudiant</th>
-                    <th data-field="facturation" data-sortable="false">Simple</th>
+                    <th data-field="billing" data-sortable="false">Simple</th>
                     <th data-field="cum_amount" data-sortable="false">Cumulé</th>
                     <th data-field="computed" data-sortable="false">Calculé</th>
                 </tr>
@@ -92,9 +92,9 @@
                     <td class="cell-for-numbers">{{ transaction.cum_faculty|floatformat:2 }}</td>
                     <td class="cell-for-numbers">{{ transaction.cum_added|floatformat:2 }}</td>
                     <td class="cell-for-numbers">{{ transaction.cum_spent|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.facturation|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ transaction.billing|floatformat:2 }}</td>
                     <td class="cell-for-numbers">{{ transaction.cum_amount|floatformat:2 }}</td>
-                    <td>{{ transaction.facs_facturation }}</td>
+                    <td>{{ transaction.facs_billing }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
