@@ -25,13 +25,14 @@ from bill2myprint.models import Section, Semester, SemesterSummary, Student, Tra
 #
 ##########################
 
+
 def __get_semesters():
     return Semester.objects.order_by("end_date").values_list('name', flat=True)
 
 
 def __get_faculties():
     return SemesterSummary.objects.\
-        order_by("section__faculty__name"). \
+        order_by("section__faculty__name").\
         values_list('section__faculty__name', flat=True).\
         distinct()
 
@@ -57,7 +58,7 @@ def __get_current_semester(post, arg=""):
         now = datetime.now()
         semesters = Semester.objects.\
             filter(end_date__gt=now).\
-            order_by("end_date"). \
+            order_by("end_date").\
             values_list('name', flat=True)
         semester = semesters[0]
 
@@ -92,20 +93,19 @@ def __compute(dict):
 
 
 def __compute_bill(semester, faculty, section=""):
+    fac_sect = faculty + ":" + section
 
-    billing_faculty = SemesterSummary.objects. \
-        filter(semester__name=semester). \
-        filter(billing_faculty__contains=faculty)
-
-    if section:
-        billing_faculty = billing_faculty.filter(section__acronym=section)
-
-    billing_faculty = billing_faculty.values_list('billing_faculty', flat=True)
+    billing_faculty = SemesterSummary.objects.\
+        filter(semester__name=semester).\
+        filter(billing_faculty__contains=fac_sect).\
+        values_list('billing_faculty', flat=True)
 
     sum_bill = 0.0
     for bill in billing_faculty:
         bill_dict = ast.literal_eval(bill)
-        sum_bill += bill_dict[faculty]
+        for key, value in bill_dict.iteritems():
+            if fac_sect in key:
+                sum_bill += value
     return sum_bill
 
 
@@ -125,13 +125,15 @@ def compute(request, semester=""):
     if semester:
         students = students.filter(semestersummary__semester__name=semester)
 
+    students = students.filter(sciper=184366)
+
     for student in students:
         comp_dict = defaultdict(float)
         floored_faculty_allowance = []
         for t_semester in semesters:
-            semesters_datas = SemesterSummary.objects. \
-                filter(semester__name=t_semester). \
-                filter(student=student). \
+            semesters_datas = SemesterSummary.objects.\
+                filter(semester__name=t_semester).\
+                filter(student=student).\
                 order_by("-myprint_allowance", "-faculty_allowance")
             for semesters_data in semesters_datas:
                 comp_dict['vpsi'] += semesters_data.myprint_allowance
@@ -141,9 +143,8 @@ def compute(request, semester=""):
 
                 total_billing_faculties = __compute(comp_dict)
 
-                floored_faculty_allowance.append(
-                    [Section.objects.get(id=semesters_data.section_id).faculty.name, comp_dict['faculty']]
-                )
+                section = Section.objects.get(id=semesters_data.section_id)
+                floored_faculty_allowance.append([section.faculty.name + ":" + section.acronym, comp_dict['faculty']])
 
                 faculties_billing = __get_floored_faculties_allowance(
                     floored_faculty_allowance,
@@ -252,8 +253,8 @@ def sections(request, faculty="", section="", semester=""):
 
     students = SemesterSummary.objects.\
         filter(semester__name=current_semester).\
-        filter(section__acronym=current_section). \
-        order_by("student__sciper"). \
+        filter(section__acronym=current_section).\
+        order_by("student__sciper").\
         values('student__sciper',
                'myprint_allowance',
                'faculty_allowance',
@@ -438,10 +439,10 @@ def student_billing(request):
         comp_dict = defaultdict(float)
         floored_faculty_allowance = []
         for semester in semesters:
-            semesters_datas = SemesterSummary.objects. \
-                filter(semester__name=semester). \
-                filter(student=student). \
-                order_by("-myprint_allowance", "-faculty_allowance"). \
+            semesters_datas = SemesterSummary.objects.\
+                filter(semester__name=semester).\
+                filter(student=student).\
+                order_by("-myprint_allowance", "-faculty_allowance").\
                 values()
             for semesters_data in semesters_datas:
                 comp_dict['vpsi'] += semesters_data['myprint_allowance']
@@ -450,11 +451,8 @@ def student_billing(request):
                 comp_dict['spent'] += semesters_data['total_spent']
                 comp_dict['billing_faculty'] = __compute(comp_dict)
 
-                trans_dict = dict()
-                trans_dict['semester'] = Semester.objects.get(id=semesters_data['semester_id']).name
-                trans_dict['faculty_name'] = Section.objects.get(id=semesters_data['section_id']).faculty.name
-
-                floored_faculty_allowance.append([trans_dict['faculty_name'], comp_dict['faculty']])
+                section = Section.objects.get(id=semesters_data['section_id'])
+                floored_faculty_allowance.append([section.faculty.name + ":" + section.acronym, comp_dict['faculty']])
 
                 facs_billing = __get_floored_faculties_allowance(
                     floored_faculty_allowance,
@@ -464,6 +462,10 @@ def student_billing(request):
 
                 comp_dict['billing_faculty'] = -sum(facs_billing.values())
                 comp_dict['amount'] += comp_dict['billing_faculty']
+
+                trans_dict = dict()
+                trans_dict['semester'] = section.name
+                trans_dict['faculty_name'] = section.faculty.name
 
                 trans_dict['facs_billing'] = dict(facs_billing)
                 trans_dict['vpsi'] = semesters_data['myprint_allowance']
@@ -508,8 +510,8 @@ def sciper_list(request):
             filter(sciper__icontains=pattern). \
             extra(select={'student': 'sciper'})
     else:
-        students = Student.objects. \
-            filter(Q(**{"name__istartswith": pattern}) | Q(**{"name__icontains": ' ' + pattern})). \
+        students = Student.objects.\
+            filter(Q(**{"name__istartswith": pattern}) | Q(**{"name__icontains": ' ' + pattern})).\
             extra(select={'student': 'name'})
 
     return HttpResponse(json.dumps(list(students.order_by('student').values('student'))))
