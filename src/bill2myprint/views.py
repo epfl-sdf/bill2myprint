@@ -462,7 +462,7 @@ def student_billing(request):
                 comp_dict['amount'] += comp_dict['billing_faculty']
 
                 trans_dict = dict()
-                trans_dict['semester'] = section.name
+                trans_dict['semester'] = semester
                 trans_dict['faculty_name'] = section.faculty.name
 
                 trans_dict['facs_billing'] = dict(facs_billing)
