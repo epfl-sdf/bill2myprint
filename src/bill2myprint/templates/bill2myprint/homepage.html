@@ -70,7 +70,7 @@
 </div>
 
 <div class="row">
-    <a class="btn btn-primary" href="{% url 'compute_all' %}" role="button">Recalculer tout</a>
-    <a class="btn btn-primary" href="{% url 'compute' semester=current_semester %}" role="button">Calculer {{ current_semester }}</a>
+    <a class="btn btn-primary disabled" href="{% url 'compute_all' %}" role="button">Recalculer tout</a>
+    <a class="btn btn-primary disabled" href="{% url 'compute' semester=current_semester %}" role="button">Calculer {{ current_semester }}</a>
 </div>
 {% endblock %}

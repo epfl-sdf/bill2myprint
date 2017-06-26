@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 
 from django.db.models import Q, Count, Case, F, FloatField, When
 from django.core.management.base import BaseCommand
@@ -23,11 +24,29 @@ class Command(BaseCommand):
             student.save()
         return student
 
+    def handle_first_uniflow_allowance(self, student, section):
+        semester = Semester.objects.get(name='Automne 2016-2017')
+        dt = timedelta(days=1)
+        d = semester.end_date_official - dt
+        if not student.has_uniflow_initial_allowance:
+            Transaction.objects.create(transaction_type='MYPRINT_ALLOWANCE',
+                                       transaction_date=d,
+                                       semester=semester,
+                                       amount=24.0,
+                                       section=section,
+                                       student=student,
+                                       cardinality=1,
+                                       job_type=''
+                                       )
+            student.has_uniflow_initial_allowance = True
+            student.save()
+
     def handle(self, *args, **options):
         i = 0
         current_semester = None
         previous_semester = None
         to_save = []
+        first_uniflow_semester = Semester.objects.get(name='Automne 2016-2017')
         for semester in Semester.objects.all().order_by('end_date'):
             i += 1
             print('Semester: {}'.format(i))
@@ -128,7 +147,7 @@ class Command(BaseCommand):
                     current_sciper = st[0]
                 if not current_section_acronym:
                     current_section_acronym = st_section_acronym
-                if current_sciper != st[0]:
+                if current_sciper != st[0]:  # Then we finished to handle previous student and can save his transactions
                     section = Section.objects.get(acronym=current_section_acronym)
                     student = self.update_and_get_student(sciper=current_sciper, username=xstr(last_transaction[6]))
                     if student_total_spent != 0:
@@ -138,10 +157,13 @@ class Command(BaseCommand):
                                             student=student,
                                             section=section,
                                             semester=semester))
+                    if semester.end_date >= first_uniflow_semester.end_date:
+                        self.handle_first_uniflow_allowance(student, section)
                     current_sciper = st[0]
                     current_section_acronym = st_section_acronym
                     student_total_spent = 0
                     student_total_charged = 0
+
                 elif current_section_acronym != st_section_acronym:
                     section = Section.objects.get(acronym=current_section_acronym)
                     student = self.update_and_get_student(sciper=current_sciper, username=xstr(last_transaction[6]))
@@ -152,11 +174,13 @@ class Command(BaseCommand):
                                             student=student,
                                             section=section,
                                             semester=semester))
+                    if semester.end_date >= first_uniflow_semester.end_date:
+                        self.handle_first_uniflow_allowance(student, section)
                     current_section_acronym = st_section_acronym
                     student_total_spent = 0
                     student_total_charged = 0
 
-                elif st[4] == 'T_ACCOUNT_CHARGING':
+                if st[4] == 'T_ACCOUNT_CHARGING':
                     section = Section.objects.get(acronym=current_section_acronym)
                     student = self.update_and_get_student(sciper=current_sciper, username=xstr(st[6]))
                     to_save.append(Transaction(transaction_type='ACCOUNT_CHARGING',
@@ -165,6 +189,8 @@ class Command(BaseCommand):
                                             student=student,
                                             section=section,
                                             semester=semester))
+                    if semester.end_date >= first_uniflow_semester.end_date:
+                        self.handle_first_uniflow_allowance(student, section)
                     student_total_charged += st[3]
                 elif st[4] == 'T_JOB_PROPS':
                     student_total_spent += st[3]

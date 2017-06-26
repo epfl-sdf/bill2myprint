@@ -11,6 +11,7 @@ class Student(models.Model):
     sciper = models.CharField(max_length=10, db_index=True, blank=True)
     username = models.CharField(max_length=100, blank=True, db_index=True)
     name = models.CharField(max_length=255, blank=True, db_index=True, default='')
+    has_uniflow_initial_allowance = models.BooleanField(default=False)
 
     def __str__(self):
         return '{}'.format(self.sciper)
@@ -87,14 +88,14 @@ class SemesterSummary(models.Model):
 
     def __str__(self):
         out = {
-                'student': self.student,
-                'section': self.section,
-                'semester': self.semester,
-                'total_spent': self.total_spent,
-                'total_charged': self.total_charged,
-                'myprint_allowance': self.myprint_allowance,
-                'faculty_allowance': self.faculty_allowance
-                }
+            'student': self.student,
+            'section': self.section,
+            'semester': self.semester,
+            'total_spent': self.total_spent,
+            'total_charged': self.total_charged,
+            'myprint_allowance': self.myprint_allowance,
+            'faculty_allowance': self.faculty_allowance
+        }
         return repr(out)
 
 

@@ -4,14 +4,14 @@ from django.db import models
 
 
 class TAllTransactions(models.Model):
-    trans_id = models.IntegerField(db_column='TRANS_ID', primary_key=True)  # Field name made lowercase.
-    trans_origin = models.CharField(db_column='TRANS_ORIGIN', max_length=20)  # Field name made lowercase.
-    trans_amount = models.FloatField(db_column='TRANS_AMOUNT')  # Field name made lowercase.
-    trans_description = models.CharField(db_column='TRANS_DESCRIPTION', max_length=94, blank=True, null=True)  # Field name made lowercase.
-    trans_source = models.CharField(db_column='TRANS_SOURCE', max_length=50, blank=True, null=True)  # Field name made lowercase.
-    person_sciper = models.CharField(db_column='PERSON_SCIPER', max_length=10, blank=True, null=True)  # Field name made lowercase.
+    trans_id = models.IntegerField(db_column='TRANS_ID', primary_key=True)
+    trans_origin = models.CharField(db_column='TRANS_ORIGIN', max_length=20)
+    trans_amount = models.FloatField(db_column='TRANS_AMOUNT')
+    trans_description = models.CharField(db_column='TRANS_DESCRIPTION', max_length=94, blank=True, null=True)
+    trans_source = models.CharField(db_column='TRANS_SOURCE', max_length=50, blank=True, null=True)
+    person_sciper = models.CharField(db_column='PERSON_SCIPER', max_length=10, blank=True, null=True)
     account_name = models.CharField(max_length=255, blank=True, null=True)
-    trans_datetime = models.DateTimeField(db_column='TRANS_DATETIME')  # Field name made lowercase.
+    trans_datetime = models.DateTimeField(db_column='TRANS_DATETIME')
     trxdateonly = models.DateTimeField(blank=True, null=True)
     trxyear = models.IntegerField(blank=True, null=True)
     trxmonth = models.IntegerField(blank=True, null=True)
@@ -47,7 +47,7 @@ class TAllTransactions(models.Model):
     trx_letter_sheet_count = models.IntegerField(blank=True, null=True)
     trx_legal_sheet_count = models.IntegerField(blank=True, null=True)
     trx_pagesets_summary = models.CharField(max_length=4000, blank=True, null=True)
-    user_unit_id = models.IntegerField(db_column='USER_UNIT_ID', blank=True, null=True)  # Field name made lowercase.
+    user_unit_id = models.IntegerField(db_column='USER_UNIT_ID', blank=True, null=True)
     cf = models.CharField(max_length=6, blank=True, null=True)
     user_last_name = models.CharField(max_length=255, blank=True, null=True)
     user_first_name = models.CharField(max_length=255, blank=True, null=True)
@@ -63,11 +63,11 @@ class TAllTransactions(models.Model):
 
 
 class TSemester(models.Model):
-    smst_id = models.AutoField(db_column='SMST_ID', primary_key=True)  # Field name made lowercase.
-    smst_name = models.CharField(db_column='SMST_NAME', max_length=50)  # Field name made lowercase.
-    smst_end_date = models.DateTimeField(db_column='SMST_END_DATE')  # Field name made lowercase.
-    smst_end_date_official = models.DateTimeField(db_column='SMST_END_DATE_OFFICIAL')  # Field name made lowercase.
-    smst_central_allowance_date = models.DateTimeField(db_column='SMST_CENTRAL_ALLOWANCE_DATE', blank=True, null=True)  # Field name made lowercase.
+    smst_id = models.AutoField(db_column='SMST_ID', primary_key=True)
+    smst_name = models.CharField(db_column='SMST_NAME', max_length=50)
+    smst_end_date = models.DateTimeField(db_column='SMST_END_DATE')
+    smst_end_date_official = models.DateTimeField(db_column='SMST_END_DATE_OFFICIAL')
+    smst_central_allowance_date = models.DateTimeField(db_column='SMST_CENTRAL_ALLOWANCE_DATE', blank=True, null=True)
 
     class Meta:
         managed = False

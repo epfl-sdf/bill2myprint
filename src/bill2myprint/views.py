@@ -16,7 +16,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Custom models
 from uniflow.models import BudgettransactionsT
-from bill2myprint.models import Section, Semester, SemesterSummary, Student, Transaction, UpdateStatus
+from .models import Section, Semester, SemesterSummary, Student, Transaction, UpdateStatus
 
 
 ##########################
@@ -103,7 +103,7 @@ def __compute_bill(semester, faculty, section=""):
     sum_bill = 0.0
     for bill in billing_faculty:
         bill_dict = ast.literal_eval(bill)
-        for key, value in bill_dict.iteritems():
+        for key, value in bill_dict.items():
             if fac_sect in key:
                 sum_bill += value
     return sum_bill
@@ -124,8 +124,6 @@ def compute(request, semester=""):
 
     if semester:
         students = students.filter(semestersummary__semester__name=semester)
-
-    students = students.filter(sciper=184366)
 
     for student in students:
         comp_dict = defaultdict(float)
@@ -416,7 +414,7 @@ def faculty_extension(request):
 
 
 def status(request):
-    status_table= UpdateStatus.objects.order_by("-update_date")
+    status_table = UpdateStatus.objects.order_by("-update_date")
 
     return render(
         request,
