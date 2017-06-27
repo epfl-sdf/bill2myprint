@@ -14,6 +14,9 @@
                 </div>
                 <div class="col-md-8">
                     <input type="text" name="student" placeholder="Numéro sciper">
+                    {% if message %}
+                        <label>{{ message }}</label>
+                    {% endif %}
                 </div>
                 <div class="col-md-2">
                     <input type="submit" class="btn btn-info" value="Rechercher">

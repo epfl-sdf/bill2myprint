@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 """
     (c) All rights reserved. ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, Switzerland, VPSI, 2017
 """
@@ -427,60 +429,63 @@ def status(request):
 
 
 def student_billing(request):
+    message = ""
+    transactions = []
+    student = None
 
     if "student" in request.POST:
         sciper = request.POST['student']
-        student = Student.objects.get(sciper=sciper)
-        semesters = __get_semesters()
+        students = Student.objects.filter(sciper=sciper)
 
-        transactions = []
-        comp_dict = defaultdict(float)
-        floored_faculty_allowance = []
-        for semester in semesters:
-            semesters_datas = SemesterSummary.objects.\
-                filter(semester__name=semester).\
-                filter(student=student).\
-                order_by("-myprint_allowance", "-faculty_allowance").\
-                values()
-            for semesters_data in semesters_datas:
-                comp_dict['vpsi'] += semesters_data['myprint_allowance']
-                comp_dict['faculty'] += semesters_data['faculty_allowance']
-                comp_dict['added'] += semesters_data['total_charged']
-                comp_dict['spent'] += semesters_data['total_spent']
-                comp_dict['billing_faculty'] = __compute(comp_dict)
+        if len(students) > 0:
+            student = students[0]
+            semesters = __get_semesters()
+            comp_dict = defaultdict(float)
+            floored_faculty_allowance = []
+            for semester in semesters:
+                semesters_datas = SemesterSummary.objects.\
+                    filter(semester__name=semester).\
+                    filter(student=student).\
+                    order_by("-myprint_allowance", "-faculty_allowance").\
+                    values()
+                for semesters_data in semesters_datas:
+                    comp_dict['vpsi'] += semesters_data['myprint_allowance']
+                    comp_dict['faculty'] += semesters_data['faculty_allowance']
+                    comp_dict['added'] += semesters_data['total_charged']
+                    comp_dict['spent'] += semesters_data['total_spent']
+                    comp_dict['billing_faculty'] = __compute(comp_dict)
 
-                section = Section.objects.get(id=semesters_data['section_id'])
-                floored_faculty_allowance.append([section.faculty.name + ":" + section.acronym, comp_dict['faculty']])
+                    section = Section.objects.get(id=semesters_data['section_id'])
+                    floored_faculty_allowance.append(
+                        [section.faculty.name + ":" + section.acronym, comp_dict['faculty']]
+                    )
 
-                facs_billing = __get_floored_faculties_allowance(
-                    floored_faculty_allowance,
-                    -comp_dict['amount'],
-                    -comp_dict['billing_faculty']
-                )
+                    facs_billing = __get_floored_faculties_allowance(
+                        floored_faculty_allowance,
+                        -comp_dict['amount'],
+                        -comp_dict['billing_faculty']
+                    )
 
-                comp_dict['billing_faculty'] = -sum(facs_billing.values())
-                comp_dict['amount'] += comp_dict['billing_faculty']
+                    comp_dict['billing_faculty'] = -sum(facs_billing.values())
+                    comp_dict['amount'] += comp_dict['billing_faculty']
 
-                trans_dict = dict()
-                trans_dict['semester'] = semester
-                trans_dict['faculty_name'] = section.faculty.name
-
-                trans_dict['facs_billing'] = dict(facs_billing)
-                trans_dict['vpsi'] = semesters_data['myprint_allowance']
-                trans_dict['faculty'] = semesters_data['faculty_allowance']
-                trans_dict['added'] = semesters_data['total_charged']
-                trans_dict['spent'] = semesters_data['total_spent']
-                trans_dict['cum_vpsi'] = comp_dict['vpsi']
-                trans_dict['cum_faculty'] = comp_dict['faculty']
-                trans_dict['cum_added'] = comp_dict['added']
-                trans_dict['cum_spent'] = comp_dict['spent']
-                trans_dict['cum_amount'] = comp_dict['amount']
-                trans_dict['billing'] = comp_dict['billing_faculty']
-                transactions.append(trans_dict)
-
-    else:
-        student = None
-        transactions = []
+                    trans_dict = dict()
+                    trans_dict['semester'] = semester
+                    trans_dict['faculty_name'] = section.faculty.name
+                    trans_dict['facs_billing'] = dict(facs_billing)
+                    trans_dict['vpsi'] = semesters_data['myprint_allowance']
+                    trans_dict['faculty'] = semesters_data['faculty_allowance']
+                    trans_dict['added'] = semesters_data['total_charged']
+                    trans_dict['spent'] = semesters_data['total_spent']
+                    trans_dict['cum_vpsi'] = comp_dict['vpsi']
+                    trans_dict['cum_faculty'] = comp_dict['faculty']
+                    trans_dict['cum_added'] = comp_dict['added']
+                    trans_dict['cum_spent'] = comp_dict['spent']
+                    trans_dict['cum_amount'] = comp_dict['amount']
+                    trans_dict['billing'] = comp_dict['billing_faculty']
+                    transactions.append(trans_dict)
+        else:
+            message = "Numéro sciper invalide"
 
     return render(
         request,
@@ -489,6 +494,7 @@ def student_billing(request):
             'is_miscellaneous': True,
             'student': student,
             'transactions': transactions,
+            'message': message,
         }
     )
 
