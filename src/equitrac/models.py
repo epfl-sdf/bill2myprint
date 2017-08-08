@@ -72,3 +72,72 @@ class TSemester(models.Model):
     class Meta:
         managed = False
         db_table = 'T_SEMESTER'
+
+
+class CatTransaction(models.Model):
+    id = models.IntegerField(primary_key=True)
+    trxtype = models.CharField(max_length=3)
+    trxsubtype = models.CharField(max_length=3, blank=True, null=True)
+    devid = models.IntegerField(blank=True, null=True)
+    subdeviceid = models.IntegerField(blank=True, null=True)
+    chargeid = models.IntegerField(blank=True, null=True)
+    accountid = models.IntegerField(blank=True, null=True)
+    ct1accountid = models.IntegerField(blank=True, null=True)
+    ct2accountid = models.IntegerField(blank=True, null=True)
+    trxdate = models.DateTimeField()
+    creation = models.DateTimeField()
+    lastmodified = models.DateTimeField()
+    amount = models.DecimalField(max_digits=20, decimal_places=5)
+    internalamount = models.DecimalField(max_digits=20, decimal_places=5, blank=True, null=True)
+    chargeaccbalance = models.DecimalField(max_digits=20, decimal_places=5, blank=True, null=True)
+    plid = models.IntegerField(blank=True, null=True)
+    internalplid = models.IntegerField(blank=True, null=True)
+    refid = models.IntegerField(blank=True, null=True)
+    valexception = models.TextField(blank=True, null=True)
+    trxstate = models.SmallIntegerField()
+    applicationname = models.CharField(max_length=255, blank=True, null=True)
+    trxguid = models.CharField(unique=True, max_length=64)
+    approvedbyid = models.IntegerField(blank=True, null=True)
+    freemoneybalance = models.DecimalField(max_digits=20, decimal_places=5)
+    freemoneyamount = models.DecimalField(max_digits=20, decimal_places=5)
+    grouptrxguid = models.CharField(max_length=64)
+
+    class Meta:
+        managed = False
+        db_table = 'cat_transaction'
+
+
+class CatValidation(models.Model):
+    id = models.IntegerField(primary_key=True)
+    valtype = models.CharField(max_length=3)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True, null=True)
+    pid = models.IntegerField()
+    balance = models.DecimalField(max_digits=20, decimal_places=5)
+    hardlimit = models.DecimalField(max_digits=20, decimal_places=5)
+    creation = models.DateTimeField()
+    lastmodified = models.DateTimeField()
+    expiration = models.DateTimeField(blank=True, null=True)
+    state = models.SmallIntegerField()
+    primarypin = models.CharField(max_length=255, blank=True, null=True)
+    secondarypin = models.CharField(max_length=255, blank=True, null=True)
+    parid = models.IntegerField()
+    locationid = models.IntegerField(blank=True, null=True)
+    nonbillable = models.SmallIntegerField(blank=True, null=True)
+    freemoney = models.DecimalField(max_digits=20, decimal_places=5)
+
+    class Meta:
+        managed = False
+        db_table = 'cat_validation'
+        unique_together = (('valtype', 'name', 'pid', 'expiration', 'parid'),)
+
+
+# class CasTrxAccExt(models.Model):
+#     x_id = models.IntegerField(primary_key=True)
+#     details = models.CharField(max_length=255, blank=True, null=True)
+#     operatorworkstation = models.CharField(max_length=255)
+#     operatorname = models.CharField(max_length=255)
+#
+#     class Meta:
+#         managed = False
+#         db_table = 'cas_trx_acc_ext'

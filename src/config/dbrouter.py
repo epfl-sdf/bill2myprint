@@ -7,6 +7,9 @@ class MyPrintRouter(object):
         """
         Attempts to read bill2myprint models go to MyPrint MSSQL DB.
         """
+        if model._meta.model_name == 'cattransaction' or \
+                model._meta.model_name == 'catvalidation':
+            return 'equitrac_db'
         if model._meta.model_name == 'tsemester':
             return 'semesters_db'
         if model._meta.app_label == 'uniflow':
@@ -27,6 +30,15 @@ class MyPrintRouter(object):
         """
         Allow relations if both models are in the bill2myprint app.
         """
+        if obj1._meta.model_name == 'catvalidation' and \
+                obj2._meta.model_name == 'catvalidation':
+            return True
+        if obj1._meta.model_name == 'cattransaction' and \
+                obj2._meta.model_name == 'cattransaction':
+            return True
+        if obj1._meta.model_name == 'castrxaccext' and \
+                obj2._meta.model_name == 'castrxaccext':
+            return True
         if obj1._meta.model_name == 'tsemester' and \
                 obj2._meta.model_name == 'tsemester':
             return True
@@ -48,6 +60,6 @@ class MyPrintRouter(object):
         """
         if app_label == 'uniflow' or db == 'myprint' or \
                 app_label == 'equitrac' or db == 'equitrac_transactions' or \
-                app_label == 'staff' or db == 'staff_db':
+                app_label == 'staff' or db == 'staff_db' or db == 'equitrac_db':
             return False
         return None

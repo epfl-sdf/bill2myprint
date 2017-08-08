@@ -32,8 +32,14 @@ class Command(BaseCommand):
             section_acronym = VPersonDeltaHistory.get_section_acronym_at_time(student.sciper, transaction_time)
         try:
             section = Section.objects.get(acronym=section_acronym)
+            if section != student.last_known_section:
+                student.last_known_section = section
+                student.save()
         except Section.DoesNotExist:
-            return None
+            if student.last_known_section:
+                return student.last_known_section
+            else:
+                return None
         return section
 
     def get_student(self, student_uniflow, transaction_time):
@@ -81,8 +87,9 @@ class Command(BaseCommand):
         first_uniflow_semester = Semester.objects.get(name='Automne 2016-2017')
         if semester.end_date < first_uniflow_semester.end_date:
             semester = first_uniflow_semester
+        previous_semester = Semester.objects.filter(end_date_official__lt=semester.end_date_official).order_by('-end_date')[0]
         dt = timedelta(days=1)
-        d = semester.end_date_official - dt
+        d = previous_semester.end_date_official + dt
         if not student.has_uniflow_initial_allowance:
             Transaction.objects.create(transaction_type='MYPRINT_ALLOWANCE',
                                        transaction_date=d,
@@ -106,28 +113,24 @@ class Command(BaseCommand):
         date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         # If it is the first time this script is run, then take all transactions else take only new ones
         if first:
-            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc'))
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(transactiondata__icontains='Alloc')
         else:
-            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Alloc') &
-                                                                             Q(transactiontime__gt=date_last_imported))
-        uniflow_budget_transactions = uniflow_budget_transactions.order_by('entity', 'transactiontime')
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(transactiondata__icontains='Alloc',
+                                                                             transactiontime__gt=date_last_imported)
+        uniflow_budget_transactions = uniflow_budget_transactions.order_by('transactiontime')
 
-        current_serviceconsumer_id = ''
         to_save = []
         print('MyPrint allowance')
         # This loop handles BudgetTransactions, it uses the same principles as the previous one.
         for bt in uniflow_budget_transactions:
-            if not current_serviceconsumer_id or current_serviceconsumer_id != bt.entity.id:
-                current_serviceconsumer_id = ''
-                student = self.get_student(bt.entity, bt.transactiontime)
-                if student is None:
-                    continue
-                section = self.get_section(bt.entity, student, bt.transactiontime)
-                if not section:
-                    continue
-                current_serviceconsumer_id = bt.entity.id
+            student = self.get_student(bt.entity, bt.transactiontime)
+            if student is None:
+                continue
+            section = self.get_section(bt.entity, student, bt.transactiontime)
+            if not section:
+                continue
             if bt.amount == 0:
-                    continue
+                continue
             semester = None
             if 'alloc' in bt.transactiondata.lower():
                 transaction_type = 'MYPRINT_ALLOWANCE'
@@ -157,22 +160,18 @@ class Command(BaseCommand):
         else:
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Rallonge') &
                                                                              Q(transactiontime__gt=date_last_imported))
-        uniflow_budget_transactions = uniflow_budget_transactions.order_by('entity', 'transactiontime')
+        uniflow_budget_transactions = uniflow_budget_transactions.order_by('transactiontime')
 
-        current_serviceconsumer_id = ''
         to_save = []
         # This loop handles BudgetTransactions, it uses the same principles as the previous one.
         print('Faculty allowance')
         for bt in uniflow_budget_transactions:
-            if not current_serviceconsumer_id or current_serviceconsumer_id != bt.entity.id:
-                current_serviceconsumer_id = ''
-                student = self.get_student(bt.entity, bt.transactiontime)
-                if student is None:
-                    continue
-                section = self.get_section(bt.entity, student, bt.transactiontime)
-                if not section:
-                    continue
-                current_serviceconsumer_id = bt.entity.id
+            student = self.get_student(bt.entity, bt.transactiontime)
+            if student is None:
+                continue
+            section = self.get_section(bt.entity, student, bt.transactiontime)
+            if not section:
+                continue
             if bt.amount == 0:
                     continue
             semester = None
@@ -203,22 +202,18 @@ class Command(BaseCommand):
         else:
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Camipro-Web-Load') &
                                                                              Q(transactiontime__gt=date_last_imported))
-        uniflow_budget_transactions = uniflow_budget_transactions.order_by('entity', 'transactiontime')
+        uniflow_budget_transactions = uniflow_budget_transactions.order_by('transactiontime')
 
-        current_serviceconsumer_id = ''
         to_save = []
         print('Account Charging')
         # This loop handles BudgetTransactions, it uses the same principles as the previous one.
         for bt in uniflow_budget_transactions:
-            if not current_serviceconsumer_id or current_serviceconsumer_id != bt.entity.id:
-                current_serviceconsumer_id = ''
-                student = self.get_student(bt.entity, bt.transactiontime)
-                if student is None:
-                    continue
-                section = self.get_section(bt.entity, student, bt.transactiontime)
-                if not section:
-                    continue
-                current_serviceconsumer_id = bt.entity.id
+            student = self.get_student(bt.entity, bt.transactiontime)
+            if student is None:
+                continue
+            section = self.get_section(bt.entity, student, bt.transactiontime)
+            if not section:
+                continue
             if bt.amount == 0:
                     continue
             semester = None
@@ -241,44 +236,65 @@ class Command(BaseCommand):
             self.handle_initial_allowance(student=student, section=section, semester=semester)
         Transaction.objects.bulk_create(to_save)
 
-    def handle(self, *args, **options):
+    def handle_usages(self, first):
         date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         students_cost_center_id = ServiceconsumerT.objects.get(name='ETU').id
-        # If it is the first time this script is run, then take all transactions else take only new ones
-        if options['first']:
-            self.handle_myprint_allowance(True)
-            self.handle_faculty_allowance(True)
-            self.handle_account_charging(True)
-            service_usages = ServiceusageT.objects.filter(costcenterpath__icontains=students_cost_center_id)
+        if first:
+            all_service_usages = ServiceusageT.objects.filter(costcenterpath__icontains=students_cost_center_id)
         else:
-            self.handle_myprint_allowance(False)
-            self.handle_faculty_allowance(False)
-            self.handle_account_charging(False)
-            service_usages = ServiceusageT.objects.filter(usagebegin__gt=date_last_imported,
+            all_service_usages = ServiceusageT.objects.filter(usagebegin__gt=date_last_imported,
                                                           costcenterpath__icontains=students_cost_center_id)
-        service_usages = service_usages.order_by('serviceconsumer', 'usagebegin')
-        batch = 5000
 
-        total = service_usages.count()
-        current_serviceconsumer_id = ''
-        next_batch_start = 0
-        batch_end = 0
-        # This loop handles ServiceUsage objects (print jobs)
-        while batch_end < total:
-            batch_end = min(total, batch_end + batch)
-            to_save = []
-            for su in service_usages[next_batch_start:batch_end]:
-                # This is only implemented to limit the number of database query we run
-                if not current_serviceconsumer_id or current_serviceconsumer_id != su.serviceconsumer.id:
-                    current_serviceconsumer_id = ''
+        print('Print jobs')
+        if first:
+            first_uniflow_semester = Semester.objects.get(name='Automne 2016-2017')
+            uniflow_semesters = Semester.objects.filter(end_date__gte=first_uniflow_semester.end_date).order_by('end_date')
+            # This loop handles ServiceUsage objects (print jobs)
+            previous_semester = None
+            for semester in uniflow_semesters:
+                if not previous_semester:
+                    service_usages = all_service_usages.filter(usagebegin__lte=semester.end_date)
+                else:
+                    service_usages = all_service_usages.filter(usagebegin__lte=semester.end_date, usagebegin__gt=previous_semester.end_date)
+                service_usages = service_usages.order_by('usagebegin')
+                print(semester)
+                for su in service_usages:
                     student = self.get_student(su.serviceconsumer, su.usagebegin)
                     if student is None:
                         continue
                     section = self.get_section(su.serviceconsumer, student, su.usagebegin)
                     if not section:
                         continue
-                    current_serviceconsumer_id = su.serviceconsumer.id
-                    semester = Semester.objects.filter(end_date__gte=su.usagebegin).order_by('end_date')[0]
+                    if not student.has_uniflow_initial_allowance:
+                        self.handle_initial_allowance(student=student, section=section, semester=semester)
+                    if su.amountpaid == 0:
+                            continue
+                    elif su.amountpaid < 0:
+                        transaction_type = 'REFUND'
+                    else:
+                        transaction_type = 'PRINT_JOB'
+                    Transaction.objects.create(
+                        transaction_type=transaction_type,
+                        transaction_date=su.usagebegin,
+                        semester=semester,
+                        amount=-su.amountpaid,
+                        section=section,
+                        student=student,
+                        cardinality=su.cardinality,
+                        job_type=su.service.get_service_name()
+                    )
+                    self.update_semester_summary(student, section, semester, transaction_type, su.amountpaid)
+                previous_semester = semester
+        else:
+            service_usages = all_service_usages.order_by('usagebegin')
+            for su in service_usages:
+                student = self.get_student(su.serviceconsumer, su.usagebegin)
+                if student is None:
+                    continue
+                section = self.get_section(su.serviceconsumer, student, su.usagebegin)
+                if not section:
+                    continue
+                if not student.has_uniflow_initial_allowance:
                     self.handle_initial_allowance(student=student, section=section, semester=semester)
                 if su.amountpaid == 0:
                         continue
@@ -287,7 +303,7 @@ class Command(BaseCommand):
                 else:
                     transaction_type = 'PRINT_JOB'
                 semester = Semester.objects.filter(end_date__gte=su.usagebegin).order_by('end_date')[0]
-                to_save.append(Transaction(
+                Transaction.objects.create(
                     transaction_type=transaction_type,
                     transaction_date=su.usagebegin,
                     semester=semester,
@@ -295,11 +311,17 @@ class Command(BaseCommand):
                     section=section,
                     student=student,
                     cardinality=su.cardinality,
-                    job_type=su.service.get_service_name())
+                    job_type=su.service.get_service_name()
                 )
                 self.update_semester_summary(student, section, semester, transaction_type, su.amountpaid)
-            Transaction.objects.bulk_create(to_save)
-            next_batch_start = batch_end
+
+    def handle(self, *args, **options):
+        # If it is the first time this script is run, then take all transactions else take only new ones
+        first = options['first']
+        self.handle_myprint_allowance(first)
+        self.handle_faculty_allowance(first)
+        self.handle_account_charging(first)
+        self.handle_usages(first)
 
         date_last_transaction = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         UpdateStatus.objects.create(status='SUCCESS', message='', update_date=date_last_transaction)

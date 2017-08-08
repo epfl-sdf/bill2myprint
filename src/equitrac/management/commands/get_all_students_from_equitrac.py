@@ -20,6 +20,7 @@ class Command(BaseCommand):
             try:
                 p = Personnes.objects.get(sciper=sciper)
                 username = p.username
+                name = p.get_full_name()
             except Personnes.DoesNotExist:
                 if len(str(sciper)) > 6:
                     sciper = student[0]
@@ -30,7 +31,8 @@ class Command(BaseCommand):
                 except Personnes.DoesNotExist:
                     p = VPersonHistory.objects.get(person_sciper=sciper)
                     username = p.person_username
+                    name = p.get_full_name()
             if username is None:
                 username = ''
-            to_save.append(Student(sciper=student[0], username=username))
+            to_save.append(Student(sciper=student[0], username=username, name=name))
         Student.objects.bulk_create(to_save)

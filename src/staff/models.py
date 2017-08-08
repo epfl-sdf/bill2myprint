@@ -43,6 +43,9 @@ class Personnes(models.Model):
         managed = False
         db_table = 'Personnes'
 
+    def get_full_name(self):
+        return '{} {}'.format(self.nom, self.prenom)
+
 
 class TStudMultipleAccredHistory(models.Model):
     sciper = models.CharField(db_column='SCIPER', max_length=8)
@@ -63,7 +66,7 @@ class TStudMultipleAccredHistory(models.Model):
 
 
 class Unites(models.Model):
-    id = models.CharField(primary_key=True, max_length=16)
+    id = models.IntegerField(primary_key=True)
     parent = models.IntegerField(blank=True, null=True)
     sigle = models.CharField(max_length=24)
     libelle = models.CharField(max_length=128, blank=True, null=True)
@@ -148,6 +151,21 @@ class VPersonDeltaHistory(models.Model):
             return ''
         return '{} {}'.format(objs[0].person_lastname, objs[0].person_firstname)
 
+    @classmethod
+    def is_student_at_time(cls, sciper, time):
+        objs = cls.objects.filter(person_sciper=sciper, delta_time__lte=time).order_by('-delta_time')
+        if objs.count() == 0:
+            return False
+        person = objs[0]
+        main_unit_id = person.person_main_unit_id
+        try:
+            unit = Unites.objects.get(id=main_unit_id)
+        except Unites.DoesNotExist:
+            return False
+        if 'EPFL ETU' in unit.hierarchie:
+            return True
+        return False
+
 
 class VPersonHistory(models.Model):
     person_sciper = models.CharField(db_column='PERSON_SCIPER', max_length=9, primary_key=True)
@@ -180,3 +198,6 @@ class VPersonHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'V_PERSON_HISTORY'
+
+    def get_full_name(self):
+        return '{} {}'.format(self.person_lastname, self.person_firstname)

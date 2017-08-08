@@ -165,6 +165,55 @@ def compute(request, semester=""):
     return HttpResponseRedirect(reverse('homepage'))
 
 
+def find_negatives(request):
+    # Semesters must be ordered to compute billing historically
+    semesters = __get_semesters()
+
+    sem1 = Semester.objects.get(id=14)
+    sem2 = Semester.objects.get(id=15)
+
+    current_students = Transaction.objects.filter(Q(semester=sem1) | Q(semester=sem2)).values_list('student', flat=True).distinct()
+
+    problematic_students = []
+
+    for s in current_students:
+        problematic_students.append(Student.objects.get(id=s))
+
+    problematic_students_temp = problematic_students
+    problematic_students = []
+
+    for s in problematic_students_temp:
+        if s.transaction_set.filter(semester__id=1).count() > 0:
+            problematic_students.append(s)
+
+    print(len(problematic_students))
+    result = []
+    for student in problematic_students:
+        print(student)
+        comp_dict = defaultdict(float)
+        broke = False
+        for t_semester in semesters:
+            semesters_datas = SemesterSummary.objects.\
+                filter(semester__name=t_semester).\
+                filter(student=student).\
+                order_by("-myprint_allowance", "-faculty_allowance")
+            for semesters_data in semesters_datas:
+                comp_dict['vpsi'] += semesters_data.myprint_allowance
+                comp_dict['faculty'] += semesters_data.faculty_allowance
+                comp_dict['added'] += semesters_data.total_charged
+                comp_dict['spent'] += semesters_data.total_spent
+
+                total = comp_dict['vpsi'] + comp_dict['faculty'] + comp_dict['added'] + comp_dict['spent']
+
+                if total < 0:
+                    result.append((student, t_semester))
+                    broke = True
+                    break
+            if broke:
+                break
+    return result
+
+
 ##########################
 #
 # VIEWS FUNCTIONS

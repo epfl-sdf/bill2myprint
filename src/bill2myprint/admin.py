@@ -19,7 +19,7 @@ class SemesterAdmin(admin.ModelAdmin):
 
 class SectionAdmin(admin.ModelAdmin):
     list_display = ('name', 'acronym', 'faculty')
-    search_fields = ['name', 'acronym']
+    search_fields = ['name', 'acronym', 'faculty__name']
 
 
 class FactulyAdmin(admin.ModelAdmin):
