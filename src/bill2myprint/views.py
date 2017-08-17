@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.db.models import Sum, Q
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.conf import settings
 
 # Custom models
 from uniflow.models import BudgettransactionsT
@@ -203,7 +204,7 @@ def __create_PDF(faculty, date_start, date_end, data, total):
     pdf.set_text_color(254, 0, 0)
     pdf.cell(amount_margin, 0, locale.format('%.2f', total, True), 0, 1, 'R')
 
-    pdf.output('bill2myprint/static/pdf/Facturation-' + faculty + '.pdf', 'F')
+    pdf.output(settings.MEDIA_ROOT + 'pdf/Facturation-' + faculty + '.pdf', 'F')
 
 
 ##########################

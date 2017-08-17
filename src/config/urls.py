@@ -16,6 +16,8 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.shortcuts import render
+from django.conf import settings
+from django.conf.urls.static import static
 from django_tequila.urls import urlpatterns as django_tequila_urlpatterns
 from django_tequila.admin import TequilaAdminSite
 
@@ -26,6 +28,6 @@ urlpatterns = [
     url(r'^', include('bill2myprint.urls')),
     url(r'^not_allowed/', lambda request: render(request, '403.html')),
     url(r'^admin/', admin.site.urls),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += django_tequila_urlpatterns

@@ -92,7 +92,7 @@
         <fieldset>
             <legend>Récupération du document</legend>
             <div id="div-download-pdf">
-                <a id="download-pdf" href="{% static "pdf/Facturation-" %}{{ faculty }}.pdf" download>Télécharger la facture en PDF</a>
+                <a id="download-pdf" href="{{MEDIA_URL}}pdf/Facturation-{{ faculty }}.pdf" download>Télécharger la facture en PDF</a>
             </div>
         </fieldset>
 
