@@ -1,4 +1,5 @@
 {% extends "bill2myprint/base.html" %}
+{% load format_number %}
 
 
 {% block template_main %}
@@ -20,7 +21,7 @@
                 <td>{{ extension.faculty }}</td>
                 <td>{{ extension.section }}</td>
                 <td>{{ extension.entity }}</td>
-                <td class="cell-for-numbers">{{ extension.amount|floatformat:2 }}</td>
+                <td class="cell-for-numbers">{{ extension.amount|format_number_norm }}</td>
             </tr>
             {% endfor %}
         </tbody>

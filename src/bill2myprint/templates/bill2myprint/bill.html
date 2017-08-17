@@ -1,0 +1,101 @@
+{% load static format_number %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Facturation</title>
+
+        <link href="{% static "css/bill.css" %}" rel="stylesheet">
+
+        <script src="{% static "js/jquery/jquery.js" %}"></script>
+        <script src="{% static "js/jquery/jquery-ui.min.js" %}"></script>
+        <script src="{% static "js/bill.js" %}"></script>
+    </head>
+
+    <body>
+        <fieldset>
+            <legend>Choix des semestres</legend>
+            <form id="bill_form" action="{% url 'download_faculty' faculty=faculty %}" method="POST">{% csrf_token %}
+                <select name="semesters-choice">
+                    {% for sem in all_semesters %}
+                    <option>{{ sem }}
+                    {% endfor %}
+                </select>
+                <div id="semesters-selection">
+                    {% for sem in semesters %}
+                    <div>
+                        <input type="hidden" name="semesters" value="{{ sem }}">
+                        <span>
+                            <label>{{ sem }}</label>
+                            <label class="remove-semester">X</label>
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </fieldset>
+
+        <fieldset>
+            <legend>Facture</legend>
+
+            <div id="bill-page-title">
+                <label>Facturation myPrint étudiants {{ faculty }}</label>
+            </div>
+
+            <div id="bill-page-period">
+                <label>Consommation des rallonges facultaires</label><br>
+                <label>période du {{ date_start|date:"d M Y" }} au {{ date_end|date:"d M Y" }}</label>
+            </div>
+
+            <hr>
+
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="th-section">Section</th>
+                            <th class="th-semester">Semestre</th>
+                            <th class="th-amount">Consommation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        {% for datum in data %}
+                        <tr>
+                            <td>{{ datum.section }}</td>
+                            <td>{{ datum.semester }}</td>
+                            <td class="cell-for-numbers">{{ datum.amount|format_number_abs }}</td>
+                        </tr>
+                        {% if forloop.counter|divisibleby:semesters_length %}
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                        <tr>
+                            <td>Total</td>
+                            <td></td>
+                            <td class="cell-for-numbers total">{{ total|format_number_abs }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Récupération du document</legend>
+            <div id="div-download-pdf">
+                <a id="download-pdf" href="{% static "pdf/Facturation-" %}{{ faculty }}.pdf" download>Télécharger la facture en PDF</a>
+            </div>
+        </fieldset>
+
+    </body>
+
+</html>

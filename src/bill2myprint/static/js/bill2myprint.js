@@ -76,38 +76,6 @@ jQuery(function($) {
 	 */
 	offSetManager();
 
-
-    /**
-     * Manage the select list.
-     */
-/*
-	$(function() {
-
-		var maxHeight = 200;
-
-		$(".btn-group").hover(function (e) {
-			var $container = $(this);
-			var $list = $container.find("ul");
-			var origHeight = $container.height();
-			var lines = $container.find("ul li").length;
-			var height = 40.0 * lines * 1.1;       // make sure there is enough room at the bottom
-			var multiplier = height / maxHeight;     // needs to move faster if list is taller
-			$list.css({ paddingTop: origHeight }).show();
-			// don't do any animation if list shorter than max
-			if (multiplier > 1) {
-				$container.mousemove(function(e) {
-					var offset = $container.offset();
-					var relativeY = (e.pageY - offset.top - origHeight) * multiplier;
-					if (relativeY > origHeight) {
-						$list.css("top", -relativeY + origHeight);
-					}
-				});
-			}
-		}, function() {
-			$(this).find("ul").css({ top: 0 }).hide();   // put things back to normal
-		});
-	});
-*/
 	/**
      * Submit form when an element of list is chosen.
      */

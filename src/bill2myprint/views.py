@@ -6,8 +6,10 @@
 
 import json
 import ast
+import locale
 from collections import defaultdict, OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
+from fpdf import FPDF
 
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -111,6 +113,99 @@ def __compute_bill(semester, faculty, section=""):
     return sum_bill
 
 
+def __create_PDF(faculty, date_start, date_end, data, total):
+    title = u"Facturation myPrint étudiants " + faculty
+    subtitle1 = "Consommation des rallonges facultaires"
+    subtitle2 = u"période du " + date_start + " au " + date_end
+
+    class PDF(FPDF):
+        def __init__(self):
+            FPDF.__init__(self)
+            self.add_font('DejaVu-Bold', '', 'DejaVuSansCondensed-Bold.ttf', uni=True)
+            self.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
+            self.set_margins(20, 20, 20)
+            locale.setlocale(locale.LC_NUMERIC, '')
+
+        def header(self):
+            # Logo
+            # self.image('logo_pb.png', 10, 8, 33)
+
+            # title
+            self.set_font('DejaVu-Bold', '', 15)
+            w = self.get_string_width(title) + 6
+            self.set_x((210 - w) / 2)
+            self.cell(w, 9, title, 0, 0, 'C', 0)
+            self.ln(15)
+
+            # subtitle1
+            self.set_font('DejaVu', '', 13)
+            w = self.get_string_width(subtitle1) + 6
+            self.set_x((210 - w) / 2)
+            self.set_text_color(0, 128, 254)
+            self.cell(w, 9, subtitle1, 0, 0, 'C')
+            self.ln(7)
+
+            # subtitle2
+            w = self.get_string_width(subtitle2) + 6
+            self.set_x((210 - w) / 2)
+            self.set_text_color(0, 128, 254)
+            self.cell(w, 9, subtitle2, 0, 0, 'C')
+            self.ln(15)
+
+            # line
+            self.set_draw_color(0, 128, 254)
+            self.set_fill_color(0, 128, 254)
+            self.cell(0, 1, "", 1, 0, "", 1)
+            self.ln(15)
+
+        # Page footer
+        def footer(self):
+            pdf.set_font('DejaVu', '', 12)
+            pdf.set_text_color(0, 0, 0)
+            # Position at 1.5 cm from bottom
+            self.set_y(-15)
+            # Arial italic 8
+            self.set_font('Arial', 'I', 8)
+            # Page number
+            self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
+
+    section_margin = 40;
+    semester_margin = 90
+    amount_margin = 40
+
+    pdf = PDF()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+
+    pdf.set_font('DejaVu-Bold', '', 12)
+    pdf.cell(section_margin, 0, "Section", 0, 0)
+    pdf.cell(semester_margin, 0, "Semestre", 0, 0)
+    pdf.cell(amount_margin, 0, "Consommation", 0, 1, 'R')
+    pdf.ln(10)
+
+    pdf.set_font('DejaVu', '', 12)
+
+    section = data[0]['section']
+    for datum in data:
+        if datum['section'] != section:
+            section = datum['section']
+            pdf.ln(15)
+        else:
+            pdf.ln(7)
+        pdf.cell(section_margin, 0, datum['section'], 0, 0)
+        pdf.cell(semester_margin, 0, datum['semester'], 0, 0)
+        pdf.cell(amount_margin, 0, locale.format('%.2f', datum['amount'], True), 0, 1, 'R')
+    pdf.ln(20)
+
+    pdf.set_font('DejaVu-Bold', '', 12)
+    pdf.cell(section_margin, 0, "Total", 0, 0)
+    pdf.cell(semester_margin, 0, "", 0, 0)
+    pdf.set_text_color(254, 0, 0)
+    pdf.cell(amount_margin, 0, locale.format('%.2f', total, True), 0, 1, 'R')
+
+    pdf.output('bill2myprint/static/pdf/Facturation-' + faculty + '.pdf', 'F')
+
+
 ##########################
 #
 # FUNCTIONS FROM VIEWS
@@ -158,6 +253,12 @@ def compute(request, semester=""):
 
                 comp_dict['billing_faculty'] = -sum(faculties_billing.values())
                 comp_dict['amount'] += comp_dict['billing_faculty']
+
+            if not semester or t_semester == semester:
+                comp_dict['remain'] = comp_dict['vpsi'] + comp_dict['faculty'] + comp_dict['added'] + comp_dict['spent']
+                for semesters_data in semesters_datas:
+                    semesters_data.remain = comp_dict['remain']
+                    semesters_data.save()
 
             if semester and t_semester == semester:
                 break
@@ -226,8 +327,10 @@ def homepage(request):
     faculties = __get_faculties()
 
     billing = dict()
+    sum_billing = 0.0
     for faculty in faculties:
         billing[faculty] = __compute_bill(semester=current_semester, faculty=faculty)
+        sum_billing += billing[faculty]
 
     number_of_students = __get_number_of_students(semester=current_semester)
 
@@ -241,6 +344,7 @@ def homepage(request):
             'current_semester': current_semester,
             'semesters': semesters,
             'faculties': OrderedDict(sorted(billing.items())),
+            'sum_billing': sum_billing,
             'last_update': last_update,
             'number_of_students': number_of_students,
         }
@@ -298,7 +402,7 @@ def sections(request, faculty="", section="", semester=""):
     if section:
         current_section = section
     elif ('section' in request.POST) and (request.POST['section'] in sections):
-            current_section = request.POST['section']
+        current_section = request.POST['section']
 
     students = SemesterSummary.objects.\
         filter(semester__name=current_semester).\
@@ -308,9 +412,8 @@ def sections(request, faculty="", section="", semester=""):
                'myprint_allowance',
                'faculty_allowance',
                'total_charged',
-               'total_spent')
-
-    number_of_students = len(students)
+               'total_spent',
+               'remain')
 
     paginator = Paginator(students, 50)
     page = request.GET.get('page')
@@ -332,7 +435,7 @@ def sections(request, faculty="", section="", semester=""):
             'current_faculty': current_faculty,
             'current_section': current_section,
             'current_semester': current_semester,
-            'number_of_students': number_of_students,
+            'number_of_students': len(students),
             'students': students_p,
         }
     )
@@ -448,7 +551,7 @@ def faculty_extension(request):
                             dict["whole_entity"] = key
                             found = True
                     elif found and key.isdigit():
-                        dict["amount"] = key
+                        dict["amount"] = float(key)
                 if found:
                     faculties_extensions.append(dict)
 
@@ -502,6 +605,10 @@ def student_billing(request):
                     comp_dict['faculty'] += semesters_data['faculty_allowance']
                     comp_dict['added'] += semesters_data['total_charged']
                     comp_dict['spent'] += semesters_data['total_spent']
+                    comp_dict['remain'] = semesters_data['myprint_allowance'] +\
+                                          semesters_data['faculty_allowance'] +\
+                                          semesters_data['total_charged'] +\
+                                          semesters_data['total_spent']
                     comp_dict['billing_faculty'] = __compute(comp_dict)
 
                     section = Section.objects.get(id=semesters_data['section_id'])
@@ -517,6 +624,7 @@ def student_billing(request):
 
                     comp_dict['billing_faculty'] = -sum(facs_billing.values())
                     comp_dict['amount'] += comp_dict['billing_faculty']
+                    comp_dict['cum_remain'] += comp_dict['remain']
 
                     trans_dict = dict()
                     trans_dict['semester'] = semester
@@ -526,11 +634,13 @@ def student_billing(request):
                     trans_dict['faculty'] = semesters_data['faculty_allowance']
                     trans_dict['added'] = semesters_data['total_charged']
                     trans_dict['spent'] = semesters_data['total_spent']
+                    trans_dict['remain'] = comp_dict['remain']
                     trans_dict['cum_vpsi'] = comp_dict['vpsi']
                     trans_dict['cum_faculty'] = comp_dict['faculty']
                     trans_dict['cum_added'] = comp_dict['added']
                     trans_dict['cum_spent'] = comp_dict['spent']
                     trans_dict['cum_amount'] = comp_dict['amount']
+                    trans_dict['cum_remain'] = comp_dict['cum_remain']
                     trans_dict['billing'] = comp_dict['billing_faculty']
                     transactions.append(trans_dict)
         else:
@@ -544,6 +654,71 @@ def student_billing(request):
             'student': student,
             'transactions': transactions,
             'message': message,
+        }
+    )
+
+
+def download_faculty(request, faculty="", semester=""):
+    all_semesters = list(__get_semesters())
+    sections = __get_sections_by_faculty(faculty)
+
+    if 'semesters' in request.POST:
+        semesters_temp = request.POST.getlist('semesters')
+    else:
+        semesters_temp = []
+        semesters_temp.append(semester)
+
+    semesters = []
+    for sem in all_semesters:
+        if sem in semesters_temp:
+            semesters.append(sem)
+
+    date_start = datetime.strptime('01019999', '%d%m%Y').date()
+    date_end = datetime.strptime('01010001', '%d%m%Y').date()
+    for sem in semesters:
+        curr_sem = Semester.objects.get(name=sem)
+        if date_end < curr_sem.end_date.date():
+            date_end = curr_sem.end_date.date()
+        index = all_semesters.index(sem)
+        if index > 0:
+            curr_sem = Semester.objects.get(name=all_semesters[index-1])
+            if date_start > curr_sem.end_date.date():
+                date_start = curr_sem.end_date.date()
+        else:
+            date_start = datetime.strptime('15092008', '%d%m%Y').date()
+    date_start += timedelta(days=1)
+
+    total = 0.0
+    data = []
+    for section in sections:
+        for sem in semesters:
+            dict = {}
+            dict['section'] = section
+            dict['semester'] = sem
+            dict['amount'] = __compute_bill(semester=sem, faculty=faculty, section=section)
+            total += dict['amount']
+            data.append(dict)
+
+    __create_PDF(
+        faculty=faculty,
+        date_start=date_start.strftime("%d.%m.%y"),
+        date_end=date_end.strftime("%d.%m.%y"),
+        data=data,
+        total=total
+    )
+
+    return render(
+        request,
+        'bill2myprint/bill.html',
+        {
+            'all_semesters': all_semesters,
+            'semesters': semesters,
+            'faculty': faculty,
+            'date_start': date_start,
+            'date_end': date_end,
+            'data': data,
+            'total': total,
+            'semesters_length': str(len(semesters))
         }
     )
 

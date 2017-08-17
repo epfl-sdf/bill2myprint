@@ -65,11 +65,11 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="cell-for-numbers">{{ cumulated.vpsi|format_number }}</td>
-                    <td class="cell-for-numbers">{{ cumulated.faculty|format_number }}</td>
-                    <td class="cell-for-numbers">{{ cumulated.added|format_number }}</td>
-                    <td class="cell-for-numbers">{{ cumulated.spent|format_number }}</td>
-                    <td class="cell-for-numbers">{{ cumulated.credit|floatformat:2 }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.vpsi|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.faculty|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.added|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.spent|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ cumulated.credit|format_number_norm }}</td>
                 </tr>
             </tbody>
         </table>

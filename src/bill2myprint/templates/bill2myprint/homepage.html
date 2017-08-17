@@ -55,15 +55,26 @@
                 <tr>
                     <th data-field="faculty" data-sortable="true">Faculté</th>
                     <th data-field="bill" data-sortable="true">Facturation</th>
+                    <th data-field="actions" data-sortable="true"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for key, value in faculties.items %}
                 <tr>
                     <td><a href="{% url 'faculties' faculty=key semester=current_semester %}">{{ key }}</a></td>
-                    <td class="cell-for-numbers">{{ value|format_number }}</td>
+                    <td class="cell-for-numbers">{{ value|format_number_abs }}</td>
+                    {% if value > 0 %}
+                    <td><a href="{% url 'download_faculty' faculty=key semester=current_semester %}" target="_blank"><img src="{% static "img/pdf_download.png" %}" width="42px"></a></td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
+                <tr class="warning">
+                    <td>Total</td>
+                    <td class="cell-for-numbers">{{ sum_billing|format_number_abs }}</td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
     </div>

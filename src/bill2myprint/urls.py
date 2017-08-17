@@ -4,7 +4,7 @@
 
 from django.conf.urls import url
 from bill2myprint.views import homepage, faculties, sections, students, sciper_list, \
-    faculty_extension, status, compute, student_billing
+    faculty_extension, status, compute, student_billing, download_faculty
 
 
 urlpatterns = [
@@ -21,4 +21,8 @@ urlpatterns = [
     url(r'^faculty-extension/$', faculty_extension, name='faculty_extension'),
     url(r'^status/$', status, name='status'),
     url(r'^sciper/$', sciper_list),
+
+    url(r'^download_faculty/(?P<faculty>[\w\& ]+)/$', download_faculty, name='download_faculty'),
+    url(r'^download_faculty/(?P<faculty>[\w\& ]+)/(?P<semester>[\w\-& ]+)/$',
+        download_faculty, name='download_faculty'),
 ]

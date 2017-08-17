@@ -1,0 +1,120 @@
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid #0080ff;
+    margin: 1em 0;
+    padding: 0;
+}
+
+select {
+    margin: 10px;
+    border: 1px solid #111;
+    background: transparent;
+    width: 250px;
+    padding: 5px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    height: 34px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: url(../img/arrow-down.png) 96% / 10% no-repeat #eee;
+}
+
+select:hover {
+    cursor: pointer;
+}
+
+/* CAUTION: IE hackery ahead */
+select::-ms-expand {
+    display: none; /* remove default arrow on ie10 and ie11 */
+}
+
+/* target Internet Explorer 9 to undo the custom arrow */
+@media screen and (min-width:0\0) {
+    select {
+        background:none\9;
+        padding: 5px\9;
+    }
+}
+
+#semesters-selection {
+    margin-top: 20px;
+}
+
+#semesters-selection div {
+    margin: 0px 10px 10px 10px;
+    height: 18px;
+    width: 200px;
+    padding: 5px;
+    border: 1px solid;
+}
+
+.remove-semester {
+    width: 20px;
+    text-align: center;
+    background-color: gainsboro;
+    float: right;
+}
+
+.remove-semester:hover {
+    cursor: pointer;
+}
+
+#bill-page-title {
+    text-align: center;
+    font: 32px arial, sans-serif;
+}
+
+#bill-page-period {
+    margin-top: 20px;
+    text-align: center;
+    font: 20px arial, sans-serif;
+    color: #0080ff;
+}
+
+table
+{
+    margin-left: auto;
+    margin-right: auto;
+}
+
+table tr
+{
+    height: 20px;
+}
+
+.th-section {
+    text-align: left;
+    width: 25%;
+}
+
+.th-semester {
+    text-align: left;
+    width: 50%;
+}
+
+.th-amount {
+    text-align: left;
+    width: 25%;
+}
+
+.cell-for-numbers {
+    text-align: right;
+}
+
+.total {
+    color: red;
+}
+
+#div-download-pdf {
+    margin: 10px;
+}
+
+#download-pdf {
+    text-decoration: none;
+    color: black;
+    padding: 5px;
+    border: solid 1px;
+}

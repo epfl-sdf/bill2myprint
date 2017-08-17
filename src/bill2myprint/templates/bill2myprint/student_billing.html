@@ -64,8 +64,8 @@
                 <tr>
                     <th rowspan=2 data-field="semester" data-sortable="false">Semestre</th>
                     <th rowspan=2 data-field="section" data-sortable="false">Faculté</th>
-                    <th colspan=4 data-field="simple" data-sortable="false">Simple</th>
-                    <th colspan=4 data-field="cumulated" data-sortable="false">Cumulé</th>
+                    <th colspan=5 data-field="simple" data-sortable="false">Simple</th>
+                    <th colspan=5 data-field="cumulated" data-sortable="false">Cumulé</th>
                     <th colspan=3 data-field="cum_amount" data-sortable="false">Facturation</th>
                 </tr>
                 <tr>
@@ -73,10 +73,12 @@
                     <th data-field="faculty" data-sortable="false">Crédit Faculté</th>
                     <th data-field="added" data-sortable="false">Crédit Étudiant</th>
                     <th data-field="spent" data-sortable="false">Dépense étudiant</th>
+                    <th data-field="remain" data-sortable="false">Reste étudiant</th>
                     <th data-field="cum_vpsi" data-sortable="false">Crédit VPSI</th>
                     <th data-field="cum_faculty" data-sortable="false">Crédit Faculté</th>
                     <th data-field="cum_added" data-sortable="false">Crédit Étudiant</th>
                     <th data-field="cum_spent" data-sortable="false">Dépense étudiant</th>
+                    <th data-field="cum_remain" data-sortable="false">Reste étudiant</th>
                     <th data-field="billing" data-sortable="false">Simple</th>
                     <th data-field="cum_amount" data-sortable="false">Cumulé</th>
                     <th data-field="computed" data-sortable="false">Calculé</th>
@@ -87,17 +89,23 @@
                 <tr>
                     <td>{{ transaction.semester }}</td>
                     <td>{{ transaction.faculty_name }}</td>
-                    <td class="cell-for-numbers">{{ transaction.vpsi|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.faculty|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.added|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.spent|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.cum_vpsi|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.cum_faculty|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.cum_added|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.cum_spent|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.billing|floatformat:2 }}</td>
-                    <td class="cell-for-numbers">{{ transaction.cum_amount|floatformat:2 }}</td>
-                    <td>{{ transaction.facs_billing }}</td>
+                    <td class="cell-for-numbers">{{ transaction.vpsi|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.faculty|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.added|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.spent|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.remain|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_vpsi|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_faculty|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_added|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_spent|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_remain|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.billing|format_number_norm }}</td>
+                    <td class="cell-for-numbers">{{ transaction.cum_amount|format_number_norm }}</td>
+                    <td>
+                        {% for key, value in transaction.facs_billing.items %}
+                            {{ key }} : {{ value|format_number_norm }}<br>
+                        {% endfor %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -97,6 +97,7 @@
                     <th data-field="faculty" data-sortable="false">Crédit section</th>
                     <th data-field="student" data-sortable="true">Crédit étudiant</th>
                     <th data-field="amount" data-sortable="true">Dépense étudiant</th>
+                    <th data-field="remain" data-sortable="true">Disponible</th>
                 </tr>
             </thead>
             <tbody>
@@ -107,10 +108,11 @@
                     {% else %}
                     <td><a href="{% url 'students' sciper=student.student__sciper %}">{{ student.student__sciper }}</a></td>
                     {% endif %}
-                    <td class="cell-for-numbers">{{ student.myprint_allowance|format_number }}</td>
-                    <td class="cell-for-numbers">{{ student.faculty_allowance|format_number }}</td>
-                    <td class="cell-for-numbers">{{ student.total_charged|format_number }}</td>
-                    <td class="cell-for-numbers">{{ student.total_spent|format_number }}</td>
+                    <td class="cell-for-numbers">{{ student.myprint_allowance|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ student.faculty_allowance|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ student.total_charged|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ student.total_spent|format_number_abs }}</td>
+                    <td class="cell-for-numbers">{{ student.remain|format_number_norm }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
