@@ -218,4 +218,3 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR + os.path.sep + 'bill2myprint' + os.path.sep + 'static' + os.path.sep  # noqa
