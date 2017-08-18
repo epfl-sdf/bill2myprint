@@ -80,24 +80,21 @@ def __get_number_of_students(semester, faculty="", section=""):
 
 
 def __set_pagination(objects, items_per_page, page):
-    if objects:
-        paginator = Paginator(objects, items_per_page)
-        try:
-            pagin = paginator.page(page)
-        except PageNotAnInteger:
-            pagin = paginator.page(1)
-        except EmptyPage:
-            pagin = paginator.page(paginator.num_pages)
+    paginator = Paginator(objects, items_per_page)
+    try:
+        pagin = paginator.page(page)
+    except PageNotAnInteger:
+        pagin = paginator.page(1)
+    except EmptyPage:
+        pagin = paginator.page(paginator.num_pages)
 
-        index = pagin.number - 1
-        max_index = len(paginator.page_range)
-        start_index = index - 3 if index >= 3 else 0
-        end_index = index + 3 if index <= max_index - 3 else max_index
-        page_range = list(paginator.page_range)[start_index:end_index]
+    index = pagin.number - 1
+    max_index = len(paginator.page_range)
+    start_index = index - 3 if index >= 3 else 0
+    end_index = index + 3 if index <= max_index - 3 else max_index
+    page_range = list(paginator.page_range)[start_index:end_index]
 
-        return {'pagin': pagin, 'page_range': page_range}
-    else:
-        return None
+    return {'objects': pagin, 'page_range': page_range}
 
 
 def __get_floored_faculties_allowance(floors, amount, charges):
@@ -403,7 +400,7 @@ def sections(request, faculty="", section="", semester=""):
             'current_section': current_section,
             'current_semester': current_semester,
             'number_of_students': len(students),
-            'students': pagination['pagin'],
+            'students': pagination['objects'],
             'page_range': pagination['page_range'],
         }
     )
@@ -473,7 +470,7 @@ def students(request, sciper=""):
         {
             'is_students': True,
             'student': student,
-            'transactions': pagination['pagin'],
+            'transactions': pagination['objects'],
             'page_range': pagination['page_range'],
             'cumulated': t,
         }
