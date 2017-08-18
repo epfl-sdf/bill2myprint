@@ -79,21 +79,7 @@
 <h2>Détaillé</h2>
 
 <div class="row" style="margin-top: 30px;">
-    <div class="pagination">
-        <span class="step-links">
-            {% if transactions.has_previous %}
-                <a href="{% url 'students' sciper=student.sciper %}?page={{ transactions.previous_page_number }}">Précédent</a>
-            {% endif %}
-
-            <span class="current-page">
-                Page {{transactions.number }} sur {{ transactions.paginator.num_pages }}
-            </span>
-
-            {% if transactions.has_next %}
-                <a href="{% url 'students' sciper=student.sciper %}?page={{ transactions.next_page_number }}">Suivant</a>
-            {% endif %}
-        </span>
-    </div>
+    {% include './includes/pagination.html' with objects=transactions %}
 
     <div>
         <table data-toggle="table" class="table table-striped table-bordered table-hover">
@@ -124,20 +110,6 @@
         </table>
     </div>
 
-    <div class="pagination">
-        <span class="step-links">
-            {% if transactions.has_previous %}
-                <a href="{% url 'students' sciper=student.sciper %}?page={{ transactions.previous_page_number }}">Précédent</a>
-            {% endif %}
-
-            <span class="current-page">
-                Page {{transactions.number }} sur {{ transactions.paginator.num_pages }}
-            </span>
-
-            {% if transactions.has_next %}
-                <a href="{% url 'students' sciper=student.sciper %}?page={{ transactions.next_page_number }}">Suivant</a>
-            {% endif %}
-        </span>
-    </div>
+    {% include './includes/pagination.html' with objects=transactions %}
 </div>
 {% endblock %}

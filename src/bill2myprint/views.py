@@ -79,6 +79,27 @@ def __get_number_of_students(semester, faculty="", section=""):
     return number_of_students.values('student').distinct().count()
 
 
+def __set_pagination(objects, items_per_page, page):
+    if objects:
+        paginator = Paginator(objects, items_per_page)
+        try:
+            pagin = paginator.page(page)
+        except PageNotAnInteger:
+            pagin = paginator.page(1)
+        except EmptyPage:
+            pagin = paginator.page(paginator.num_pages)
+
+        index = pagin.number - 1
+        max_index = len(paginator.page_range)
+        start_index = index - 3 if index >= 3 else 0
+        end_index = index + 3 if index <= max_index - 3 else max_index
+        page_range = list(paginator.page_range)[start_index:end_index]
+
+        return {'pagin': pagin, 'page_range': page_range}
+    else:
+        return None
+
+
 def __get_floored_faculties_allowance(floors, amount, charges):
     result = defaultdict(float)
     prev_floor = 0
@@ -267,55 +288,6 @@ def compute(request, semester=""):
     return HttpResponseRedirect(reverse('homepage'))
 
 
-def find_negatives(request):
-    # Semesters must be ordered to compute billing historically
-    semesters = __get_semesters()
-
-    sem1 = Semester.objects.get(id=14)
-    sem2 = Semester.objects.get(id=15)
-
-    current_students = Transaction.objects.filter(Q(semester=sem1) | Q(semester=sem2)).values_list('student', flat=True).distinct()
-
-    problematic_students = []
-
-    for s in current_students:
-        problematic_students.append(Student.objects.get(id=s))
-
-    problematic_students_temp = problematic_students
-    problematic_students = []
-
-    for s in problematic_students_temp:
-        if s.transaction_set.filter(semester__id=1).count() > 0:
-            problematic_students.append(s)
-
-    print(len(problematic_students))
-    result = []
-    for student in problematic_students:
-        print(student)
-        comp_dict = defaultdict(float)
-        broke = False
-        for t_semester in semesters:
-            semesters_datas = SemesterSummary.objects.\
-                filter(semester__name=t_semester).\
-                filter(student=student).\
-                order_by("-myprint_allowance", "-faculty_allowance")
-            for semesters_data in semesters_datas:
-                comp_dict['vpsi'] += semesters_data.myprint_allowance
-                comp_dict['faculty'] += semesters_data.faculty_allowance
-                comp_dict['added'] += semesters_data.total_charged
-                comp_dict['spent'] += semesters_data.total_spent
-
-                total = comp_dict['vpsi'] + comp_dict['faculty'] + comp_dict['added'] + comp_dict['spent']
-
-                if total < 0:
-                    result.append((student, t_semester))
-                    broke = True
-                    break
-            if broke:
-                break
-    return result
-
-
 ##########################
 #
 # VIEWS FUNCTIONS
@@ -414,16 +386,10 @@ def sections(request, faculty="", section="", semester=""):
                'faculty_allowance',
                'total_charged',
                'total_spent',
-               'remain')
+               'remain',
+               'billing_faculty')
 
-    paginator = Paginator(students, 50)
-    page = request.GET.get('page')
-    try:
-        students_p = paginator.page(page)
-    except PageNotAnInteger:
-        students_p = paginator.page(1)
-    except EmptyPage:
-        students_p = paginator.page(paginator.num_pages)
+    pagination = __set_pagination(students, 50, request.GET.get('page'))
 
     return render(
         request,
@@ -437,13 +403,13 @@ def sections(request, faculty="", section="", semester=""):
             'current_section': current_section,
             'current_semester': current_semester,
             'number_of_students': len(students),
-            'students': students_p,
+            'students': pagination['pagin'],
+            'page_range': pagination['page_range'],
         }
     )
 
 
 def students(request, sciper=""):
-
     if 'student' in request.POST:
         if request.POST['student'].isdigit():
             student_sciper = request.POST['student']
@@ -499,17 +465,7 @@ def students(request, sciper=""):
                 t['spent'] = t['spent'] + cumulus['amount__sum']
         t['credit'] = t['vpsi'] + t['faculty'] + t['added'] + t['spent']
 
-    paginator = Paginator(transactions, 50)
-    page = request.GET.get('page')
-    if transactions:
-        try:
-            transactions_p = paginator.page(page)
-        except PageNotAnInteger:
-            transactions_p = paginator.page(1)
-        except EmptyPage:
-            transactions_p = paginator.page(paginator.num_pages)
-    else:
-        transactions_p = None
+    pagination = __set_pagination(transactions, 50, request.GET.get('page'))
 
     return render(
         request,
@@ -517,7 +473,8 @@ def students(request, sciper=""):
         {
             'is_students': True,
             'student': student,
-            'transactions': transactions_p,
+            'transactions': pagination['pagin'],
+            'page_range': pagination['page_range'],
             'cumulated': t,
         }
     )

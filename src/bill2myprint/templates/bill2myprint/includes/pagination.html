@@ -1,0 +1,13 @@
+<ul class="pagination nav navbar-nav">
+    {% if objects.has_previous %}
+    <li><a href="?page=1"><<</a></li>
+    <li><a href="?page={{ objects.previous_page_number }}"><</a></li>
+    {% endif %}
+    {% for page in page_range %}
+    <li class="{% if objects.number == page  %}active{% endif %}"><a href="?page={{page }}">{{ page }}</a></li>
+    {% endfor %}
+    {% if objects.has_next %}
+    <li><a href="?page={{ objects.next_page_number }}">></a></li>
+    <li><a href="?page={{ objects.paginator.num_pages }}">>></a></li>
+    {% endif %}
+</ul>
