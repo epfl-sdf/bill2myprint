@@ -328,6 +328,10 @@ def faculties(request, faculty="", semester=""):
     current_faculty = __get_current_faculty(faculties=faculties, post=request.POST, arg=faculty)
     sections = __get_sections_by_faculty(current_faculty)
 
+    if 'faculty' in request.POST:
+        kwargs = {'faculty': current_faculty, 'semester': current_semester}
+        return HttpResponseRedirect(reverse('faculties', kwargs=kwargs))
+
     semesters_data = SemesterSummary.objects.filter(semester__name=current_semester)
 
     sections_data = []
@@ -374,6 +378,11 @@ def sections(request, faculty="", section="", semester=""):
     elif ('section' in request.POST) and (request.POST['section'] in sections):
         current_section = request.POST['section']
 
+    if 'faculty' in request.POST:
+        faculty = request.POST['faculty']
+        kwargs = {'faculty': faculty, 'section': current_section, 'semester': current_semester}
+        return HttpResponseRedirect(reverse('sections', kwargs=kwargs))
+
     students = SemesterSummary.objects.\
         filter(semester__name=current_semester).\
         filter(section__acronym=current_section).\
@@ -410,7 +419,7 @@ def students(request, sciper=""):
     if 'student' in request.POST:
         if request.POST['student'].isdigit():
             student_sciper = request.POST['student']
-            student_name = None
+            return HttpResponseRedirect(reverse('students', kwargs={'sciper': student_sciper}))
         else:
             student_sciper = None
             student_name = request.POST['student']
@@ -432,6 +441,7 @@ def students(request, sciper=""):
     elif student_name:
         try:
             student = Student.objects.get(name=student_name)
+            return HttpResponseRedirect(reverse('students', kwargs={'sciper': student.sciper}))
         except ObjectDoesNotExist:
             student = None
 
@@ -439,7 +449,7 @@ def students(request, sciper=""):
 
     else:
         student = None
-        transactions = None
+        transactions = []
 
     if transactions:
         cumulated = list(transactions.values('transaction_type').annotate(Sum('amount')))
