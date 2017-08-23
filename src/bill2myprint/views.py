@@ -143,7 +143,6 @@ def __create_PDF(faculty, date_start, date_end, data, total):
             self.add_font('DejaVu-Bold', '', 'DejaVuSansCondensed-Bold.ttf', uni=True)
             self.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
             self.set_margins(20, 20, 20)
-            locale.setlocale(locale.LC_NUMERIC, '')
 
         def header(self):
             # Logo
@@ -292,6 +291,8 @@ def compute(request, semester=""):
 ##########################
 
 def homepage(request):
+    locale.setlocale(locale.LC_NUMERIC, 'fr_CH.utf8')
+
     semesters = __get_semesters()
     current_semester = __get_current_semester(request.POST)
     faculties = __get_faculties()
