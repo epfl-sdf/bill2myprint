@@ -145,12 +145,15 @@ jQuery(function($) {
         },
         select: function (event, ui) {
 			$("#student_form").submit();
-        }
-    }).data("ui-autocomplete")._renderItem = function (ul, item) {
-        return $("<li></li>")
-            .data("item.autocomplete", item)
-            .append($("<a></a>").html(item.student_hl))
-            .appendTo(ul);
-    };
+        },
+		create: function() {
+            $(this).data("ui-autocomplete")._renderItem = function (ul, item) {
+				return $("<li></li>")
+					.data("ui-autocomplete-item", item)
+					.append($("<a></a>").html(item.student_hl))
+					.appendTo(ul);
+            };
+		}
+    });
 
 });
