@@ -1,7 +1,7 @@
 import re
 from datetime import timedelta
 
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.core.management.base import BaseCommand
 
 from uniflow.models import ServiceusageT, ServiceconsumerT, GroupmembershipT, Camipro, BudgettransactionsT
@@ -110,11 +110,11 @@ class Command(BaseCommand):
             student.save()
 
     def handle_myprint_allowance(self, first):
-        date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         # If it is the first time this script is run, then take all transactions else take only new ones
         if first:
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(transactiondata__icontains='Alloc')
         else:
+            date_last_imported = UpdateStatus.objects.order_by('-update_date')[0].update_date
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(transactiondata__icontains='Alloc',
                                                                              transactiontime__gt=date_last_imported)
         uniflow_budget_transactions = uniflow_budget_transactions.order_by('transactiontime')
@@ -153,11 +153,11 @@ class Command(BaseCommand):
         Transaction.objects.bulk_create(to_save)
 
     def handle_faculty_allowance(self, first):
-        date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         # If it is the first time this script is run, then take all transactions else take only new ones
         if first:
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Rallonge'))
         else:
+            date_last_imported = UpdateStatus.objects.order_by('-update_date')[0].update_date
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Rallonge') &
                                                                              Q(transactiontime__gt=date_last_imported))
         uniflow_budget_transactions = uniflow_budget_transactions.order_by('transactiontime')
@@ -195,11 +195,11 @@ class Command(BaseCommand):
         Transaction.objects.bulk_create(to_save)
 
     def handle_account_charging(self, first):
-        date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         # If it is the first time this script is run, then take all transactions else take only new ones
         if first:
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Camipro-Web-Load'))
         else:
+            date_last_imported = UpdateStatus.objects.order_by('-update_date')[0].update_date
             uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Camipro-Web-Load') &
                                                                              Q(transactiontime__gt=date_last_imported))
         uniflow_budget_transactions = uniflow_budget_transactions.order_by('transactiontime')
@@ -237,11 +237,11 @@ class Command(BaseCommand):
         Transaction.objects.bulk_create(to_save)
 
     def handle_usages(self, first):
-        date_last_imported = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         students_cost_center_id = ServiceconsumerT.objects.get(name='ETU').id
         if first:
             all_service_usages = ServiceusageT.objects.filter(costcenterpath__icontains=students_cost_center_id)
         else:
+            date_last_imported = UpdateStatus.objects.order_by('-update_date')[0].update_date
             all_service_usages = ServiceusageT.objects.filter(usagebegin__gt=date_last_imported,
                                                           costcenterpath__icontains=students_cost_center_id)
 
@@ -315,13 +315,151 @@ class Command(BaseCommand):
                 )
                 self.update_semester_summary(student, section, semester, transaction_type, su.amountpaid)
 
+    def handle_inc(self, first):
+        if first:
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='INC'))
+        else:
+            date_last_imported = UpdateStatus.objects.order_by('-update_date')[0].update_date
+            uniflow_budget_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='INC') &
+                                                                             Q(transactiontime__gt=date_last_imported))
+        uniflow_budget_transactions = uniflow_budget_transactions.order_by('transactiontime')
+
+        to_save = []
+        print('Handling exceptions')
+        for bt in uniflow_budget_transactions:
+            username = bt.entity.login
+            # Try to identify student with link between camipro card and sciper
+            # If this link does not exist for this student identify him with his gaspar's username
+            try:
+                student_sciper = bt.entity.payconid.sciper
+            except Camipro.DoesNotExist:
+                student_sciper = VPersonDeltaHistory.get_sciper_at_time(username, bt.transactiontime)
+                if student_sciper is None:
+                    pattern = re.compile("^\d{6}$")
+                    if pattern.match(username):
+                        student_sciper = username
+                    else:
+                        print('ATTENTION: {} {}'.format(username, bt.transactiontime))
+                        return None
+            try:
+                student = Student.objects.get(sciper=student_sciper)
+            except Student.DoesNotExist:
+                continue
+            section = self.get_section(bt.entity, student, bt.transactiontime)
+            if not section:
+                continue
+            if bt.amount == 0:
+                    continue
+            semester = None
+            if 'inc' in bt.transactiondata.lower():
+                if bt.amount < 0:
+                    transaction_type = 'REFUND'
+                else:
+                    transaction_type = 'PRINT_JOB'
+                semester = Semester.objects.filter(end_date__gte=bt.transactiontime).order_by('end_date')[0]
+            else:
+                raise ValueError('Unknown transaction type in uniflow')
+            to_save.append(Transaction(
+                transaction_type=transaction_type,
+                transaction_date=bt.transactiontime,
+                semester=semester,
+                amount=-bt.amount,
+                section=section,
+                student=student,
+                cardinality=1,
+                job_type='')
+            )
+            self.update_semester_summary(student, section, semester, transaction_type, bt.amount)
+        Transaction.objects.bulk_create(to_save)
+
+    def handle_equitrac_import(self):
+        equitrac_import_transactions = BudgettransactionsT.objects.filter(Q(transactiondata__icontains='Equitrac'))
+
+        to_save = []
+        print("Handling equitrac post-import")
+        for eit in equitrac_import_transactions:
+            try:
+                username = eit.entity.login
+            except ServiceconsumerT.DoesNotExist:
+                continue
+            # Try to identify student with link between camipro card and sciper
+            # If this link does not exist for this student identify him with his gaspar's username
+            try:
+                student_sciper = eit.entity.payconid.sciper
+            except Camipro.DoesNotExist:
+                student_sciper = VPersonDeltaHistory.get_sciper_at_time(username, eit.transactiontime)
+                if student_sciper is None:
+                    pattern = re.compile("^\d{6}$")
+                    if pattern.match(username):
+                        student_sciper = username
+                    else:
+                        print('ATTENTION: {} {}'.format(username, eit.transactiontime))
+                        continue
+            try:
+                student = Student.objects.get(sciper=student_sciper)
+            except Student.DoesNotExist:
+                if VPersonDeltaHistory.is_student_at_time(sciper=student_sciper, time=eit.transactiontime):
+                    name = VPersonDeltaHistory.get_name_at_time(sciper=student_sciper, time=eit.transactiontime)
+                    student = Student.objects.create(sciper=student_sciper, name=name, username=username)
+                else:
+                    continue
+            section = self.get_section(eit.entity, student, eit.transactiontime)
+            if not section:
+                continue
+            student_trans_sum = student.transaction_set.aggregate(Sum('amount'))
+            student_trans_sum = student_trans_sum['amount__sum']
+            if student_trans_sum is not None:
+                if abs(eit.amount - student_trans_sum) > 0.1:
+                    diff = -eit.amount - student_trans_sum
+                    if diff > 0:
+                        transaction_type = 'REFUND'
+                    else:
+                        transaction_type = 'PRINT_JOB'
+                    student_last_equitrac_transaction = student.transaction_set.filter(transaction_type=transaction_type).order_by('-transaction_date')
+                    semester = Semester.objects.filter(end_date__gte=eit.transactiontime).order_by('end_date')[0]
+                    if student_last_equitrac_transaction.count() == 0:
+                        to_save.append(Transaction(
+                            transaction_type=transaction_type,
+                            transaction_date=eit.transactiontime,
+                            semester=semester,
+                            amount=diff,
+                            section=section,
+                            student=student,
+                            cardinality=1,
+                            job_type='')
+                        )
+                        self.update_semester_summary(student, section, semester, transaction_type, -diff)
+                    else:
+                        trans = student_last_equitrac_transaction[0]
+                        trans.amount += diff
+                        trans.save()
+                        self.update_semester_summary(student, section, semester, transaction_type, -diff)
+            else:
+                transaction_type = 'REFUND'
+                semester = Semester.objects.filter(end_date__gte=eit.transactiontime).order_by('end_date')[0]
+                to_save.append(Transaction(
+                    transaction_type=transaction_type,
+                    transaction_date=eit.transactiontime,
+                    semester=semester,
+                    amount=-eit.amount,
+                    section=section,
+                    student=student,
+                    cardinality=1,
+                    job_type='')
+                )
+                self.update_semester_summary(student, section, semester, transaction_type, eit.amount)
+        Transaction.objects.bulk_create(to_save)
+
     def handle(self, *args, **options):
         # If it is the first time this script is run, then take all transactions else take only new ones
         first = options['first']
+        if first:
+            self.handle_equitrac_import()
         self.handle_myprint_allowance(first)
         self.handle_faculty_allowance(first)
         self.handle_account_charging(first)
         self.handle_usages(first)
+        self.handle_inc(first)
 
         date_last_transaction = Transaction.objects.order_by('-transaction_date')[0].transaction_date
         UpdateStatus.objects.create(status='SUCCESS', message='', update_date=date_last_transaction)
