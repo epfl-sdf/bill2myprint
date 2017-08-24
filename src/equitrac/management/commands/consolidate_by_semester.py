@@ -44,6 +44,7 @@ class Command(BaseCommand):
         consolidated_data = {}
         received_my_print_allow = {}
         first_uniflow_semester = Semester.objects.get(name='Automne 2016-2017')
+        cdm_last_allowance_semester = Semester.objects.get(name='Automne 2012-2013')
         first_semester = Semester.objects.order_by('end_date')[0]
         charg_regex = re.compile(".*c.*arg.*")
 
@@ -67,14 +68,20 @@ class Command(BaseCommand):
                 if not infos['is_student']:
                     continue
                 student = self.update_and_get_student(sciper=sciper, username=equitrac_user.name)
+                section_acronym = infos['section_acronym']
+                try:
+                    section = Section.objects.get(acronym=section_acronym)
+                except Section.DoesNotExist:
+                    continue
                 if trans.trxtype == 'acc':
                     trx_details = CasTrxAccExt.objects.get(x_id=pk)
-                    if trans.amount == -10000:
+                    if trans.amount <= -100 or trans.amount >= 1000:
                         continue
                     if not float(trans.amount).is_integer():
                         transaction_type = 'REFUND'
                         semester = Semester.objects.filter(end_date__gte=trans.trxdate).order_by('end_date')[0]
-                    elif 'acctcharge' in trx_details.operatorname.lower() or charg_regex.match(trx_details.details.lower()):
+                    elif 'acctcharge' in trx_details.operatorname.lower() or charg_regex.match(trx_details.details.lower()) or \
+                            (trx_details.details and 'transaction #' in trx_details.details.lower()):
                         transaction_type = 'ACCOUNT_CHARGING'
                         semester = Semester.objects.filter(end_date__gte=trans.trxdate).order_by('end_date')[0]
                     elif trans.trxdate < first_semester.end_date_official:
@@ -104,18 +111,22 @@ class Command(BaseCommand):
                         else:
                             transaction_type = 'FACULTY_ALLOWANCE'
                     if transaction_type == 'FACULTY_ALLOWANCE':
-                        if trans.amount not in [12, 16, 24, 26, 32]:
+                        if abs(trans.amount) not in [12, 16, 24, 26, 32, 50]:
                             transaction_type = 'REFUND'
                             semester = Semester.objects.filter(end_date__gte=trans.trxdate).order_by('end_date')[0]
+                        else:
+                            if section.faculty.name not in ['CDM', 'ENAC', 'SV', 'SB']:
+                                transaction_type = 'MYPRINT_ALLOWANCE'
+                                semester = Semester.objects.filter(end_date_official__gte=trans.trxdate).order_by('end_date')[0]
+                            else:
+                                if section.faculty.name == 'CDM':
+                                    if trans.trxdate > cdm_last_allowance_semester.end_date_official:
+                                        transaction_type = 'MYPRINT_ALLOWANCE'
+                                        semester = Semester.objects.filter(end_date_official__gte=trans.trxdate).order_by('end_date')[0]
                 elif trans.trxtype == 'doc':
                     semester = Semester.objects.filter(end_date__gte=trans.trxdate).order_by('end_date')[0]
                     transaction_type = 'PRINT_JOB'
                 else:
-                    continue
-                section_acronym = infos['section_acronym']
-                try:
-                    section = Section.objects.get(acronym=section_acronym)
-                except Section.DoesNotExist:
                     continue
                 if semester.end_date >= first_uniflow_semester.end_date:
                     self.handle_first_uniflow_allowance(student=student, section=section)
@@ -139,10 +150,16 @@ class Command(BaseCommand):
                 for section_id, dict3 in dict2.items():
                     for transaction_type, amount in dict3.items():
                         semester = Semester.objects.get(id=semester_id)
+                        if semester_id == 15:
+                            previous_id = semester_id - 1
+                            previous_semester = Semester.objects.get(id=previous_id)
+                            dt = previous_semester.end_date + timedelta(days=1)
+                        else:
+                            dt = semester.end_date_official - timedelta(days=1)
                         student = Student.objects.get(sciper=sciper)
                         section = Section.objects.get(id=section_id)
                         Transaction.objects.create(transaction_type=transaction_type,
-                                                   transaction_date=semester.end_date_official - timedelta(days=1),
+                                                   transaction_date=dt,
                                                    amount=amount,
                                                    student=student,
                                                    section=section,
